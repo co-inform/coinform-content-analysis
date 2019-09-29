@@ -1,0 +1,3 @@
+[console_scripts]
+twarc = twarc:main
+
