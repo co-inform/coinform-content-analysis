@@ -1,0 +1,58 @@
+Metadata-Version: 2.1
+Name: jsontree
+Version: 0.5.1
+Summary: Utility class for managing json tree data as python objects. Recursive depth dictionaries with keys as attributes and json serialization.
+Home-page: https://github.com/dougn/jsontree/
+Author: Doug Napoleone
+Author-email: doug.napoleone+jsontree@gmail.com
+License: BSD
+Keywords: json,utility,util
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Utilities
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+
+jsontree - build, parse and explore json data
+=======================================================
+
+*Travis integration TBD*
+
+jsontree is a simple module for quickly building manipulating and modifying
+rich json data in python.
+
+Datetime objects are serialized out ti the ISO format which is easilly used
+in javascript. ISO formatted datetime strings will be deserialized into
+datetime objects. 
+
+.. code::
+
+    import jsontree
+    import datetime
+    data = jsontree.jsontree()
+    data.username = 'doug'
+    data.meta.date = datetime.datetime.now()
+    data.somethingelse = [1,2,3]
+
+    data['username'] == 'doug'
+
+    ser = jsontree.dumps(data)
+    backagain = jsontree.loads(ser)
+    cloned = jsontree.clone(data)
+
+
+

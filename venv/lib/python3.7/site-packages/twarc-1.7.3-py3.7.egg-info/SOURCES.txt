@@ -1,0 +1,17 @@
+MANIFEST.in
+README.md
+setup.cfg
+setup.py
+requirements/python2.txt
+requirements/python3.txt
+twarc/__init__.py
+twarc/client.py
+twarc/command.py
+twarc/decorators.py
+twarc/json2csv.py
+twarc.egg-info/PKG-INFO
+twarc.egg-info/SOURCES.txt
+twarc.egg-info/dependency_links.txt
+twarc.egg-info/entry_points.txt
+twarc.egg-info/requires.txt
+twarc.egg-info/top_level.txt
