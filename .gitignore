@@ -3,3 +3,10 @@ __pycache__
 
 # Logs
 *.log
+.env
+config.ini
+test.py
+cache/
+data/
+Replies/
+
