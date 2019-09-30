@@ -1,32 +1,11 @@
-import os
-import shutil
+import models.tweet as tweet
+import estimators.stance as stance
+import responses.stance_response as stance_response
 
-from typing import List
 from fastapi import APIRouter, HTTPException
-from pydantic import UrlStr
-from pydantic import BaseModel
 
 import service.twitter_service as twitter_service
 from settings import get_twitter_credentials
-
-class Tweet(BaseModel):
-    tweetId: str
-
-class StanceResponse(BaseModel):
-    favor: float
-    against: float
-    na: float
-
-class StanceModel:
-    model = None
-
-    def __init__(self, model):
-        self.model = model
-
-    def estimate_tweet_stance(self, tweet_id, conversation):
-        model()
-        p
-        return p[tweet_id]
 
 class ApiPool:
     def __init__(self, api_credentials):
@@ -50,7 +29,7 @@ api_pool = ApiPool(get_twitter_credentials('config.ini'))
 # Estimates stance of the tweet
 # It returns stance estimation for given post
 @router.post('/post/stance')
-def estimate_stance(tweet: Tweet):
+def estimate_stance(tweet: tweet.Tweet):
     outdir = 'data/' + tweet.tweetId
     # TODO uncomment outdir related path to disable caching
     #if os.path.isdir(outdir):
@@ -60,9 +39,9 @@ def estimate_stance(tweet: Tweet):
     try:
         if not api is None:
             conversation = twitter_service.load_conversation(api, tweet.tweetId, outdir)
-            ps = model.estimate(tweet.tweetId, conversation)
+            ps = stance.StanceModel.estimate(tweet.tweetId, conversation)
             p = ps[tweet.tweetId]
-            return StanceResponse(favor = p['favor'], against = p['against'], na = p['na'])
+            return stance_response.StanceResponse(favor = p['favor'], against = p['against'], na = p['na'])
         else:
             raise HTTPException(status_code=503, detail="Pool is full")
     finally:
