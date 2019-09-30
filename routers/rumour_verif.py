@@ -1,30 +1,17 @@
 import models.tweet as tweet
 import estimators.stance as stance
 import responses.stance_response as stance_response
+import service.api_pool
 
 from fastapi import APIRouter, HTTPException
 
 import service.twitter_service as twitter_service
 from settings import get_twitter_credentials
 
-class ApiPool:
-    def __init__(self, api_credentials):
-        # TODO implement command pattern to avoid Twitter API's max retries limit exceeded'
-        self.api_credentials = api_credentials
-        self.pool = []
-    
-    def create(self):
-        return twitter_service.create_api(self.api_credentials.pop()) if len(self.api_credentials) else None
 
-    def get(self):
-        # get first free API instance or create new one
-        return self.pool.pop() if len(self.pool) else self.create()
-    
-    def release(self, api):
-        self.pool.append(api)
 
 router = APIRouter()
-api_pool = ApiPool(get_twitter_credentials('config.ini'))
+api_pool = service.api_pool.ApiPool(get_twitter_credentials('config.ini'))
 
 # Estimates stance of the tweet
 # It returns stance estimation for given post

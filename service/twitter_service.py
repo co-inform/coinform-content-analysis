@@ -4,6 +4,7 @@
 import json
 import logging
 import os
+import settings
 
 import tweepy
 
