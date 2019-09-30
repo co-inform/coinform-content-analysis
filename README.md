@@ -15,3 +15,6 @@ ACCESSTOKENSEC = {YOUR API ACCESSTOKENSEC}
 # 3rd party library
 **CLEARumor**
 pip3 install git+https://github.com/Institute-Web-Science-and-Technologies/CLEARumor.git
+
+To test the server, run:
+`uvicorn server:app --reload`
