@@ -9,4 +9,5 @@ test.py
 cache/
 data/
 Replies/
-
+.idea/
+venv/
