@@ -4,6 +4,7 @@ import configparser
 
 # OR, explicitly providing path to '.env'
 from pathlib import Path  # python3 only
+
 env_path = Path('.') / 'config.ini'
 config = configparser.ConfigParser()
 config.read(env_path)
@@ -23,28 +24,21 @@ def convert_str(tup):
 #     auth.set_access_token(access_key, access_secret)
 #     auths.append(auth)
 
-def get_twitter_credentials( ini_path ):
-    config = configparser.ConfigParser()
-    config.read(ini_path)
+def get_twitter_credentials():
     sections = [s for s in config.sections() if s.startswith('Twitter API ')]
     return [{
         k.upper(): config[s][k] for k in config[s]
     } for s in sections]
 
+def get_stance_path():
+    return config.get('Stance Models', 'model')
+
+def get_elmo_files():
+    root = Path('.')
+    weights = root/config.get('ELMo Embedding Settings','weights')
+    options = root/config.get('ELMo Embedding Settings','options')
+    return [weights, options]
+
+
 def get_num_replies():
     return config.getint('Other Settings','NUM_REPLIES')
-
-def preserve_case():
-    return os.environ['preserve_case']
-
-def preserve_handles():
-    return os.environ['preserve_handles']
-
-def preserve_hashes():
-    return os.environ['preserve_hashes']
-
-def preserve_len():
-    return os.environ['preserve_len']
-
-def preserve_url():
-    return os.environ['preserve_url']
