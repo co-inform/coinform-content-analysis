@@ -1,0 +1,8 @@
+flask
+redis
+python-dotenv
+jsontree
+tweepy
+python-twitter
+fastapi
+torch
