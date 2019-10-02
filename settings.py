@@ -33,6 +33,9 @@ def get_twitter_credentials():
 def get_stance_path():
     return config.get('Stance Models', 'model')
 
+def get_verif_path():
+    return config.get('Verification Models', 'model')
+
 def get_elmo_files():
     root = Path('.')
     weights = root/config.get('ELMo Embedding Settings','weights')

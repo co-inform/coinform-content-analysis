@@ -16,6 +16,7 @@ from pathlib import Path
 router = APIRouter()
 api_pool = service.api_pool.ApiPool(get_twitter_credentials())
 stance_model = clearumor.ClearRumorModel(clearumor.utils.load_model_from_file(settings.get_stance_path()))
+verif_model = clearumor.ClearRumorModel(clearumor.utils.load_model_from_file(settings.get_verif_path()))
 # Estimates stance of the tweet
 # It returns stance estimation for given post
 @router.post('/post/stance')
