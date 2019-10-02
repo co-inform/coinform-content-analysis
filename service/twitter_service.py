@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import settings
+from pathlib import Path
 
 import tweepy
 
@@ -28,7 +29,7 @@ def get_auth(api_credentials):
   except KeyError:
     logger.error('Set valid twitter variables!')
 
-def get_all_replies(tweet, api, fout, depth=10, Verbose=False, crr_depth=1):
+def get_all_replies(tweet, api,outdir, depth=10, Verbose=False, crr_depth=1):
   """ Gets all replies to one tweet (also replies-to-replies with a recursive call).
       Saves replies to the file fout in .jsonl format.
       Parameters: tweet : Status() object
@@ -63,28 +64,30 @@ def get_all_replies(tweet, api, fout, depth=10, Verbose=False, crr_depth=1):
     logger.error(('Error get_all_replies: {}\n').format(e))
 
   if crr_depth == 0:
-    logger.info("Output path: %s" % fout)
+      logger.info("output path")
+    # logger.info("Output path: %s" % tweet.)
   if len(rep) != 0:
     if Verbose:
       if hasattr(tweet, 'id'):
         logger.info('Saving replies to: %s' % tweet.id)
 
-    # save to file
-    with open(fout, 'a+') as (f):
       for reply in rep:
-        # add current depth to tweet
-        jo = dict(reply._json)
-        jo['depth'] = 2 if crr_depth > 1 else crr_depth
-        logger.info(jo)
-        # write tweet to JSON dump
-        data_to_file = json.dumps(jo)
-        f.write(data_to_file + '\n')
+        fout = '%s/%s.json' % (outdir,reply.id)
+        # save to file
+        with open(fout, 'w') as (f):
+          # add current depth to tweet
+          jo = dict(reply._json)
+          jo['depth'] = 2 if crr_depth > 1 else crr_depth
+          logger.info(jo)
+          # write tweet to JSON dump
+          data_to_file = json.dumps(jo)
+          f.write(data_to_file + '\n')
 
       # recursive call
-      get_all_replies(reply, api, fout, depth=depth - 1, Verbose=False, crr_depth=crr_depth + 1)
+      get_all_replies(reply, api, outdir,depth=depth - 1, Verbose=False, crr_depth=crr_depth + 1)
 
 
-def find_source(api, tweet, max_height=100):
+def find_source(api, tweet, max_height=10):
   """
   If a tweet is a reply, find the origin of the conversation.
   Otherwise, returns the tweet itself
@@ -105,19 +108,21 @@ def find_source(api, tweet, max_height=100):
   return tweet
 
 
+
 def follow_conversations(tweet_id, api, outdir):
   original_tweet = api.get_status(tweet_id)
   logger.info('Tweet id: %s' %tweet_id)
-  fout = '%s/replies_to_%s.jsonl' % (outdir,tweet_id)
   tweet = find_source(api, original_tweet)
 
   # save original tweet
-  with open(fout, 'a') as f:
+  fout = '%s/%s.json' % (outdir,tweet.id)
+  with open(fout, 'w') as f:
     jo = dict(tweet._json)
     jo['depth'] = 0
     f.write(json.dumps(jo) + '\n')
+
   # fetch and save full conversation
-  get_all_replies(tweet, api, fout, Verbose=True)
+  get_all_replies(tweet, api,outdir, depth = 5, Verbose=True)
 
 def load_conversation(api, tweet_id, outdir):
   logger.info('Loading conversation for tweet #' + str(tweet_id))
@@ -126,14 +131,27 @@ def load_conversation(api, tweet_id, outdir):
     os.makedirs(outdir)
   follow_conversations(tweet_id, api, outdir)
 
+
+# function for reading conversation from folder
+def load_conversation_from_folder(tweet_id, outdir):
   # load conversation from folder
-  file_path = os.listdir(outdir)[0]
-  with open(outdir + '/' + file_path, 'r') as f:
-    for line in f:
-      logger.debug(json.loads(line))
-  with open(outdir + '/' + file_path, 'r') as f:
-    return [{
-      'id': tweet['id'],
-      'data': tweet,
-      'type': 2 if tweet['depth'] > 1 else tweet['depth']
-    } for tweet in [json.loads(line) for line in f]]
+  conversation_dir = tweet_id / outdir
+  conversation = []
+  for post in conversation_dir.glob('./*.json'):
+    with open(post) as f:
+      conversation.append(json.load(f))
+  return conversation
+
+
+# def load_conversation_from_folder(tweet_id, outdir):
+#   # load conversation from folder
+#   file_path = os.listdir(outdir)[0]
+#   with open(outdir + '/' + file_path, 'r') as f:
+#     for line in f:
+#       logger.debug(json.loads(line))
+#   with open(outdir + '/' + file_path, 'r') as f:
+#     return [{
+#       'id': tweet['id'],
+#       'data': tweet,
+#       'type': 2 if tweet['depth'] > 1 else tweet['depth']
+#     } for tweet in [json.loads(line) for line in f]]
