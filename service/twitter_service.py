@@ -135,7 +135,7 @@ def load_conversation(api, tweet_id, outdir):
 # function for reading conversation from folder
 def load_conversation_from_folder(tweet_id, outdir):
   # load conversation from folder
-  conversation_dir = tweet_id / outdir
+  conversation_dir = outdir/tweet_id
   conversation = []
   for post in conversation_dir.glob('./*.json'):
     with open(post) as f:

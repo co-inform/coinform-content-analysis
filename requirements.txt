@@ -6,3 +6,5 @@ tweepy
 python-twitter
 fastapi
 torch
+numpy
+pydantic
