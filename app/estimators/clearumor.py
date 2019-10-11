@@ -1,4 +1,4 @@
-import settings
+from app import settings
 import logging
 import app.estimators.utils as utils
 import src.dataset as dataset

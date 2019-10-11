@@ -1,7 +1,6 @@
-import settings
+from app import settings
 import logging
 
-from app.models import tweet
 from fastapi import APIRouter, HTTPException, Path
 from app.estimators import clearumor, utils
 from app.service import twitter_service
