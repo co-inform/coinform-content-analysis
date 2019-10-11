@@ -1,16 +1,19 @@
-FROM python:latest
+version: '3.7'
 
-EXPOSE 8000
+networks:
+  coinform:
+  # Use a custom driver
+    driver: bridge
+services:
+  content_analysis:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      network:
+        coinform
+    image: content_analysis:latest
+    ports:
+      - "8081:8000"
+    volumes:
+      - "./:/app"
 
-ADD ./app /app/app
-COPY requirements.txt /app/
-COPY data /app/
-COPY server.py /app/
-COPY settings.py /app/
-COPY config.ini /app/
-
-WORKDIR /app
-
-RUN pip install -r requirements.txt
-
-CMD ["uvicorn", "--reload", "--host", "0.0.0.0", "server:app"]
