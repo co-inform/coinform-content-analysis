@@ -4,7 +4,7 @@
 import logging
 
 from fastapi import FastAPI
-from routers import rumour_verif
+from app.routers import rumour_verif
 
 # create a formatter
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
