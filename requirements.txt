@@ -5,5 +5,8 @@ fastapi==0.42.0
 atlas==0.27.0
 typing==3.7.4.1
 uvicorn==0.8.3
+<<<<<<< HEAD
 clearumor == 1.0.2
 
+=======
+>>>>>>> 78af593899f0e87a15379efd328560c6de832f5a
