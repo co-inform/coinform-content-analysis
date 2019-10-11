@@ -81,7 +81,6 @@ class ClearRumorModel:
             post_features = sdqc.Sdqc.Dataset.calc_features(post, embeddings)
             logits = self.stance_model(embeddings[key].unsqueeze(0), from_numpy(post_features).unsqueeze(0))
             probs = F.softmax(logits, dim=1).squeeze()
-            stance_response = {}
             probabilities = probs.tolist()
             if key == source_post.id:
                 source_response['stance_support'] = probabilities[0]
