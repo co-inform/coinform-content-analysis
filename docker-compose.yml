@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  content_analysis:
+    build: .
+    ports:
+      - "8002:8000"
+    volumes:
+      - "./:/app"
