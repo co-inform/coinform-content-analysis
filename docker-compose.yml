@@ -3,7 +3,12 @@ version: '3'
 services:
   content_analysis:
     build: .
+    image: content_analysis:latest
     ports:
       - "8002:8000"
     volumes:
       - "./:/app"
+  networks:
+    default:
+      # Use a custom driver
+      driver: coinform-content-driver1
