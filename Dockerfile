@@ -7,6 +7,7 @@ COPY requirements.txt /app/
 COPY data /app/
 COPY server.py /app/
 COPY settings.py /app/
+COPY config.ini /app/
 
 WORKDIR /app
 
