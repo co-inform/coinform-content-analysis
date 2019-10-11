@@ -1,14 +1,15 @@
-version: '3'
+FROM python:latest
 
-services:
-  content_analysis:
-    build: .
-    image: content_analysis:latest
-    ports:
-      - "8002:8000"
-    volumes:
-      - "./:/app"
-networks:
-  default:
-  # Use a custom driver
-    driver: coinform-content-driver1
+EXPOSE 8000
+
+ADD ./app /app/app
+COPY requirements.txt /app/
+COPY data /app/
+COPY server.py /app/
+COPY settings.py /app/
+
+WORKDIR /app
+
+RUN pip install -r requirements.txt
+
+CMD ["uvicorn", "--reload", "--host", "0.0.0.0", "app.server:app"]
