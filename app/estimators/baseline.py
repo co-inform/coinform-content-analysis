@@ -87,6 +87,11 @@ class BaselineModel:
         source_response['veracity_true'] = 0
         source_response['veracity_unknown'] = 0
 
+        source_response['avg_stance_comment'] = float(sum(value[0] for value in replies_stance_dict.values())/replies_stance_dict.values().__len__())
+        source_response['avg_stance_deny'] = float(sum(value[1] for value in replies_stance_dict.values())/replies_stance_dict.values().__len__())
+        source_response['avg_stance_query'] = float(sum(value[2] for value in replies_stance_dict.values())/replies_stance_dict.values().__len__())
+        source_response['avg_stance_support'] = float(sum(value[3] for value in replies_stance_dict.values())/replies_stance_dict.__len__())
+
         response = {}
         response['source']= source_response
         response['replies'] = replies_response

@@ -10,7 +10,7 @@ from app.routers import rumour_verif
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 # logger to log messages
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('server')
 logger.setLevel(logging.DEBUG)
 logger.propagate = 0
 
@@ -20,13 +20,7 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-# file logger with low level
-fh = logging.FileHandler('server.log')
-fh.setLevel(logging.DEBUG)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-
-
+logger.info('logger set up.')
 app = FastAPI()
 
 app.include_router(rumour_verif.router)
