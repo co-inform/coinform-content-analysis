@@ -13,6 +13,10 @@ class Tweet(BaseModel):
     veracity_false: Optional[float]
     veracity_true: Optional[float]
     veracity_unknown: Optional[float]
+    avg_stance_comment: Optional[float]
+    avg_stance_support: Optional[float]
+    avg_stance_query: Optional[float]
+    avg_stance_deny: Optional[float]
 
 class Conversation(BaseModel):
     source: Tweet
