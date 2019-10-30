@@ -1,15 +1,18 @@
-FROM python:latest
+FROM coinform/docker
+#RUN apt-get -y update
 
 EXPOSE 8000
 
 ADD ./app /app/app
-COPY requirements.txt /app/
-COPY data /app/
-
+COPY data /app/data
 COPY config.ini /app/
+
+ADD ./app/estimators/feature_extractor.py /app/src/
 
 WORKDIR /app
 
-RUN pip install -r requirements.txt
 
-CMD ["uvicorn", "--reload", "--host", "0.0.0.0", "server:app"]
+RUN mkdir /tmp-logs
+
+#RUN export LC_ALL=C.UTF-8
+#RUN export LANG=C.UTF-8
