@@ -1,0 +1,3 @@
+[submodule "app/estimators/RumourEval2019"]
+	path = app/estimators/RumourEval2019
+	url = https://github.com/kochkinaelena/RumourEval2019.git
