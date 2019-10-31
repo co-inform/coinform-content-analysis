@@ -33,13 +33,10 @@ connector = twitter_service.TwitterService()
 @router.get('/post/veracity/{tweet_id}', response_model=tweet.Conversation)
 def estimate_veracity(tweet_id: str = Path(..., title="The ID of the tweet to get")):
     log.info('Get conversation of {}'.format(tweet_id))
-    conversation = connector.get_conversation(tweet_id)
-    # with open('example_conversation.json') as json_file:
-    #     conversation = json.load(json_file)
-    # # Writing JSON data
-    # with open('example_conversation.json', 'w') as f:
-    #     json.dump(conversation, f)
-
+    try:
+        conversation = connector.get_conversation(tweet_id)
+    except:
+        raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
     if conversation is not None:
         results = model.estimate_veracity(conversation)
     else:
