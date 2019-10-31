@@ -12,13 +12,14 @@ import torch.nn.functional as F
 
 logger = logging.getLogger('server')
 
-
 class ClearRumorModel:
     stance_model = None
 
     def __init__(self, stance_model: nn.Module, verification_model: nn.Module):
         self.stance_model = stance_model
+        self.stance_model.eval()
         self.verification_model = verification_model
+        self.verification_model.eval()
         self.device = utils.get_device()
         # todo read model parameters from the model
         self.max_sentence_length = 32
