@@ -22,4 +22,7 @@ class Conversation(BaseModel):
     source: Tweet
     replies: Dict[str,Tweet]
 
+class Callback(BaseModel):
+    callback_url: str
+
 Tweet.update_forward_refs()
