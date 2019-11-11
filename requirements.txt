@@ -1,9 +1,0 @@
-torch==1.2.0
-requests==2.22.0
-pydantic==0.32.2
-fastapi==0.42.0
-atlas==0.27.0
-typing==3.7.4.1
-uvicorn==0.8.3
-clearumor == 1.0.2
-
