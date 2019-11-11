@@ -11,6 +11,7 @@ import app.settings as settings
 class FeatureExtractor:
     def __init__(self):
         nltk.download('vader_lexicon')
+        nltk.download('punkt')
         self.tool = spacy.load("en_core_web_lg")
         self.sent_analyzer = SentimentIntensityAnalyzer()
         self.stemmer = PorterStemmer()
