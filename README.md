@@ -1,6 +1,6 @@
 # Co-Inform Content Analysis
 
-This is one of module of Co-Inform platform developed by [https://west.uni-koblenz.de/][WeST]. It performs textual analysis of posts. Currently it processes Twitter post.
+This is one of module of Co-Inform platform developed by [WeST](https://west.uni-koblenz.de/). It performs textual analysis of posts. Currently it processes Twitter post.
 
 It has following features:
 - Stance detection `app/routers/rumour_verif.py`
@@ -8,7 +8,7 @@ It has following features:
 
 ## Getting Started
 
-- run docker this [compose file][https://github.com/isspek/coinform-docker] to install required libraries
+- run docker this [compose file](https://github.com/isspek/coinform-docker) to install required libraries
 - set up your configuration in `config.ini`
 - finally run docker compose file in this repository. 
 
