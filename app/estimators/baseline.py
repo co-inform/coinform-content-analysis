@@ -12,6 +12,8 @@ class BaselineModel:
         self.verification_model = None
         with open(stance_model_path, 'rb') as f:
             self.stance_model = joblib.load(f)
+        with open(verification_model_path, 'rb') as f:
+            self.verification_model = joblib.load(f)
         # with open(verification_model_path, 'rb') as f:
         #     self.verification_model = pickle.loads(f)
         self.feat_extractor = feature_extractor.FeatureExtractor()
@@ -83,14 +85,23 @@ class BaselineModel:
         source_response['stance_query'] = probs[2]
         source_response['stance_support'] = probs[3]
 
-        source_response['veracity_false'] = 0
-        source_response['veracity_true'] = 0
-        source_response['veracity_unknown'] = 0
+
 
         source_response['avg_stance_comment'] = float(sum(value[0] for value in replies_stance_dict.values())/replies_stance_dict.values().__len__())
         source_response['avg_stance_deny'] = float(sum(value[1] for value in replies_stance_dict.values())/replies_stance_dict.values().__len__())
         source_response['avg_stance_query'] = float(sum(value[2] for value in replies_stance_dict.values())/replies_stance_dict.values().__len__())
         source_response['avg_stance_support'] = float(sum(value[3] for value in replies_stance_dict.values())/replies_stance_dict.__len__())
+        avg_stances = [source_response['avg_stance_comment'],source_response['avg_stance_deny'],source_response['avg_stance_query'],source_response['avg_stance_support']]
+
+        avg_stances = np.asarray(avg_stances).reshape(1,-1)
+        log.info(avg_stances.shape)
+        log.info(feats_source.shape)
+        verif_feats = np.concatenate([feats_source, avg_stances], axis=1)
+        log.info(verif_feats.shape)
+        verif_probs = self.verification_model.predict_proba(verif_feats)[0]
+        source_response['veracity_false'] = verif_probs[0]
+        source_response['veracity_true'] = verif_probs[1]
+        source_response['veracity_unknown'] = verif_probs[2]
 
         response = {}
         response['source']= source_response

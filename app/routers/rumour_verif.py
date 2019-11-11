@@ -22,7 +22,7 @@ log.info(settings.get_active_model()+' model has been selected.')
 # else:
 #
 
-model = baseline.BaselineModel(settings.get_stance_path(), None)
+model = baseline.BaselineModel(settings.get_stance_path(), settings.get_verif_path())
 
 connector = twitter_service.TwitterService()
 
@@ -32,6 +32,23 @@ connector = twitter_service.TwitterService()
 
 @router.get('/post/veracity/{tweet_id}', response_model=tweet.Conversation)
 def estimate_veracity(tweet_id: str = Path(..., title="The ID of the tweet to get")):
+    log.info('Get conversation of {}'.format(tweet_id))
+    try:
+        conversation = connector.get_conversation(tweet_id)
+    except:
+        raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
+    if conversation is not None:
+        results = model.estimate_veracity(conversation)
+    else:
+        raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
+    if results is not None:
+        return results
+    else:
+        raise HTTPException(status_code=503, detail='Cannot estimate veracity')
+
+
+@router.post('/post/veracity/{tweet_id}', response_model=tweet.Conversation)
+def estimate_veracity_post_veracity_tweet_id_get(callback_url: tweet.Callback,tweet_id: str = Path(..., title="The ID of the tweet to get")):
     log.info('Get conversation of {}'.format(tweet_id))
     try:
         conversation = connector.get_conversation(tweet_id)
