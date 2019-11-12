@@ -18,8 +18,6 @@ def compute_result(connector, tweet_id, model, callback_url):
             log.info(cr.json())
         else:
             raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
-        if results is not None:
-            return results
     except:
         raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
     finally:
