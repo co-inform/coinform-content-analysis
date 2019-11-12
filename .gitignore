@@ -10,3 +10,6 @@ data/
 Replies/
 .idea/
 venv/
+
+# config
+/config.ini
