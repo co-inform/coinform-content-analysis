@@ -27,7 +27,7 @@ model = baseline.BaselineModel(settings.get_stance_path(), settings.get_verif_pa
 
 connector = twitter_service.TwitterService()
 
-pool = service_pool.ServicePool()
+pool = service_pool.ServicePool(num_threads=4)
 
 # Estimates stance of the tweet
 # It returns stance estimation for given post
@@ -46,7 +46,7 @@ def estimate_veracity(tweet_id: str = Path(..., title="The ID of the tweet to ge
     if results is not None:
         return results
 
-@router.post('/post/veracity_test/{tweet_id}')
+@router.get('/post/veracity_test/{tweet_id}')
 def estimate_veracity_post_test(callback_url: tweet.Callback, tweet_id: str = Path(..., title="The ID of the tweet to get")):
     log.info('Get conversation of {}'.format(tweet_id))
     if pool.add(connector, tweet_id, model, callback_url):
@@ -57,18 +57,10 @@ def estimate_veracity_post_test(callback_url: tweet.Callback, tweet_id: str = Pa
 @router.post('/post/veracity/{tweet_id}', response_model=tweet.Conversation)
 def estimate_veracity_post_veracity_tweet_id_get(callback_url: tweet.Callback,tweet_id: str = Path(..., title="The ID of the tweet to get")):
     log.info('Get conversation of {}'.format(tweet_id))
-    try:
-        conversation = connector.get_conversation(tweet_id)
-    except:
-        raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
-    if conversation is not None:
-        results = model.estimate_veracity(conversation)
+    if pool.add(connector, tweet_id, model, callback_url):
+        return None
     else:
-        raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
-    if results is not None:
-        return results
-    else:
-        raise HTTPException(status_code=503, detail='Cannot estimate veracity')
+        raise HTTPException(status_code=500, detail='Cannot estimate veracity')
 
 
 
