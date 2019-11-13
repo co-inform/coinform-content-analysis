@@ -8,18 +8,19 @@ log = logging.getLogger('server')
 queue = []
 
 def compute_result(connector, tweet_id, model, callback_url):
+    log.info(str(callback_url))
     log.info('retrieving tweet in seperate thread')
+    results = None
+    conversation = connector.get_conversation(tweet_id)
+    if conversation is not None:
+        results = model.estimate_veracity(conversation)
+    log.info('callback executing: ' + str(callback_url))
     try:
-        conversation = connector.get_conversation(tweet_id)
-        if conversation is not None:
-            results = model.estimate_veracity(conversation)
-            log.info('callback executed:')
-            cr = requests.post(url=callback_url, data=results, timeout=15)
-            log.info(cr.json())
-        else:
-            raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
+        cr = requests.post(url=callback_url, data=results, timeout=15)
+        log.info('callback executed:' + str(callback_url))
+        log.info(cr.json())
     except:
-        raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
+        raise HTTPException(status_code=400, detail='http error')
     finally:
         queue.remove(tweet_id)
 
