@@ -16,7 +16,7 @@ def compute_result(connector, tweet_id, model, callback_url):
         results = model.estimate_veracity(conversation)
     log.info('callback executing: ' + str(callback_url))
     try:
-        cr = requests.post(url=callback_url, data=results, timeout=15)
+        cr = requests.post(url=callback_url, data=results, timeout=15,headers={"content-type":"application/json"})
         log.info('callback executed:' + str(callback_url))
         log.info(cr.json())
     except:
