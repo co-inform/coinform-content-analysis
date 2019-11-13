@@ -49,7 +49,7 @@ def estimate_veracity(tweet_id: str = Path(..., title="The ID of the tweet to ge
 @router.get('/post/veracity_test/{tweet_id}')
 def estimate_veracity_post_test(callback_url: tweet.Callback, tweet_id: str = Path(..., title="The ID of the tweet to get")):
     log.info('Get conversation of {}'.format(tweet_id))
-    if pool.add(connector, tweet_id, model, callback_url):
+    if pool.add(connector, tweet_id, model, callback_url.callback_url):
         return None
     else:
         raise HTTPException(status_code=500, detail='Cannot estimate veracity')
@@ -57,7 +57,7 @@ def estimate_veracity_post_test(callback_url: tweet.Callback, tweet_id: str = Pa
 @router.post('/post/veracity/{tweet_id}', response_model=tweet.Conversation)
 def estimate_veracity_post_veracity_tweet_id_get(callback_url: tweet.Callback,tweet_id: str = Path(..., title="The ID of the tweet to get")):
     log.info('Get conversation of {}'.format(tweet_id))
-    if pool.add(connector, tweet_id, model, callback_url):
+    if pool.add(connector, tweet_id, model, callback_url.callback_url):
         return None
     else:
         raise HTTPException(status_code=500, detail='Cannot estimate veracity')
