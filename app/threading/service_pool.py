@@ -13,8 +13,8 @@ def compute_result(connector, tweet_id, model, callback_url):
         conversation = connector.get_conversation(tweet_id)
         if conversation is not None:
             results = model.estimate_veracity(conversation)
-            cr = requests.post(url=callback_url, data=results, timeout=15)
             log.info('callback executed:')
+            cr = requests.post(url=callback_url, data=results, timeout=15)
             log.info(cr.json())
         else:
             raise HTTPException(status_code=503, detail='Cannot get conversations from twitter connector')
@@ -34,7 +34,7 @@ class ServicePool:
         t = threading.Thread(target=compute_result, args=(connector, tweet_id, model, callback_url))
         if tweet_id in queue:
             raise HTTPException(status_code=400, detail='Tweet id is in already process,try later again.')
-        if queue.count() <= self.num_threads:
+        if self.num_threads > queue.__len__():
             queue.append(tweet_id)
             t.start()
             log.info('thread started')
