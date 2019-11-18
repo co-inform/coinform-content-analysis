@@ -68,7 +68,7 @@ class ThreadPool:
         log.info('Thread pool created')
 
         with concurrent.futures.thread.ThreadPoolExecutor(max_workers=3 * num_threads) as executor:
-            for n in range(start=1, stop=num_threads):
+            for n in range(num_threads):
                 executor.submit(tweet_queue_consumer)
                 executor.submit(content_queue_consumer)
                 executor.submit(callback_queue_consumer)
