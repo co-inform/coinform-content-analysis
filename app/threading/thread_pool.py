@@ -65,7 +65,7 @@ class ThreadPool:
         # todo: maybe change the amount of workers for each ThreadPool?
         # kanske snyggare lösning än den nedanför?
         #        with concurrent.futures.thread.ThreadPoolExecutor(max_workers=24) as executor:
-        #            for n in range(start=1, stop=24):
+        #            for n in range(start=1, stop=8):
         #                executor.submit(tweet_queue_consumer)
         #                executor.submit(content_queue_consumer)
         #                executor.submit(callback_queue_consumer)
