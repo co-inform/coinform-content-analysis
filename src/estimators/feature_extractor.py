@@ -5,7 +5,7 @@ import nltk
 import numpy as np
 from nltk.stem.porter import *
 from scipy.spatial import distance
-import app.settings as settings
+import settings as settings
 
 
 class FeatureExtractor:

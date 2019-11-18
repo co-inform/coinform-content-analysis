@@ -1,13 +1,13 @@
-from app import settings
+import settings
 import logging
 
 from fastapi import APIRouter, HTTPException, Path
-from app.estimators import baseline
-from app.service import twitter_service
+from estimators import baseline
+from service import twitter_service
 #from app.threading import service_pool
-from app.threading import thread_pool
+from local_threading import thread_pool
 
-from app.models import tweet
+from models import tweet
 
 import json
 
