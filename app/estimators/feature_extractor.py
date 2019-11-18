@@ -59,6 +59,7 @@ class FeatureExtractor:
             text = text.replace(ent.text, ' __' + ent.label_ + '__ ')
         return text
 
+    # todo: this method is overshadowed by the exact same one in the bottom. Is this intended?
     def sentence_embeddings(self, text):
         text = self.preprocess(text)
         vector = self.tool(text).vector

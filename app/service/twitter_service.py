@@ -17,7 +17,7 @@ class TwitterService:
         twitter_conn = settings.get_twitter_connector()
         url = "http://" + twitter_conn['host'] + ":" + twitter_conn['port'] + "/tweets/conversation/" + tweetId
         response = requests.get(url)
-        if not response.status_code is 200:
+        if response.status_code is not 200:
             raise requests.HTTPError
         else:
             return json.loads(response.content)
