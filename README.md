@@ -7,7 +7,7 @@ It has following features:
 - Veracity estimation `app/routers/rumour_verif.py`
 
 ## Getting Started
-
+- under `data` folder, you need to have `external` folder which contains neg/pos words, and `models` contains stance, veracity models
 - run docker this [compose file](https://github.com/isspek/coinform-docker) to install required libraries
 - set up your configuration in `config.ini`
 - finally run docker compose file in this repository. 
