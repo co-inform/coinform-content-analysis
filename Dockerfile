@@ -3,11 +3,11 @@ FROM coinform/docker
 
 EXPOSE 8000
 
-ADD ./app /app/app
+COPY ./app /app/app
 COPY data /app/data
-COPY config.ini /app/
+COPY config2.ini /app/
 
-ADD ./app/estimators/feature_extractor.py /app/src/
+COPY ./app/estimators/feature_extractor.py /app/src/
 
 WORKDIR /app
 
