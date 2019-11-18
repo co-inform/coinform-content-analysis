@@ -31,15 +31,17 @@ class FeatureExtractor:
                 self.positive_smileys.append(line.strip())
 
         self.negationwords = ['not', 'no', 'nobody', 'nothing', 'none', 'never',
-                         'neither', 'nor', 'nowhere', 'hardly', 'scarcely',
-                         'barely', 'don', 'isn', 'wasn', 'shouldn', 'wouldn',
-                         'couldn', 'doesn']
+                              'neither', 'nor', 'nowhere', 'hardly', 'scarcely',
+                              'barely', 'don', 'isn', 'wasn', 'shouldn', 'wouldn',
+                              'couldn', 'doesn']
 
         self.whwords = ['what', 'when', 'where', 'which', 'who', 'whom', 'whose', 'why',
-                   'how']
-        self.entity_annotations = ['__PERSON__','__NORP__','__FAC__','__ORG__','__GPE__','__LOC__','__PRODUCT__','__EVENT__',
-'__WORK_OF_ART__','__LAW__','__LANGUAGE__','__DATE__','__TIME__','__PERCENT__','__MONEY__','__QUANTITY__','__ORDINAL__',
-'__CARDINAL__']
+                        'how']
+        self.entity_annotations = ['__PERSON__', '__NORP__', '__FAC__', '__ORG__', '__GPE__', '__LOC__', '__PRODUCT__',
+                                   '__EVENT__',
+                                   '__WORK_OF_ART__', '__LAW__', '__LANGUAGE__', '__DATE__', '__TIME__', '__PERCENT__',
+                                   '__MONEY__', '__QUANTITY__', '__ORDINAL__',
+                                   '__CARDINAL__']
 
     def extract_lemma(self):
         pass
@@ -59,7 +61,7 @@ class FeatureExtractor:
 
     def sentence_embeddings(self, text):
         text = self.preprocess(text)
-        vector =  self.tool(text).vector
+        vector = self.tool(text).vector
         return vector
 
     def emoji(self, text: str) -> str:
@@ -75,7 +77,7 @@ class FeatureExtractor:
         :return:
         :rtype:
         '''
-        text = re.sub(r"^#.*", '__hashtag__',text)
+        text = re.sub(r"^#.*", '__hashtag__', text)
         return [text, text.count('__hashtag__')]
 
     '@todo'
@@ -118,38 +120,38 @@ class FeatureExtractor:
         tokens = [self.stemmer.stem(t) for t in tweet.split()]
         return tokens
 
-    def similarity(self, post_1_id,post_2_id,embeddings):
-        dist = distance.cosine(embeddings[post_1_id],embeddings[post_2_id])
+    def similarity(self, post_1_id, post_2_id, embeddings):
+        dist = distance.cosine(embeddings[post_1_id], embeddings[post_2_id])
         return dist
 
-    def filter_url(self,text):
+    def filter_url(self, text):
         giant_url_regex = ('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|'
                            '[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
         text = re.sub(giant_url_regex, '__url__', text)
         return [text, text.count('__url__')]
 
-    def filter_mention(self,text):
+    def filter_mention(self, text):
         mention_regex = '@[\w\-]+'
         text = re.sub(mention_regex, '__usermention__', text)
         return [text, text.count('__usermention__')]
 
-    def has_badword(self,tokens):
-        bad_words= 0
+    def has_badword(self, tokens):
+        bad_words = 0
         for token in tokens:
             if token in self.badwords:
                 bad_words += 1
-        return bad_words/len(self.badwords)
+        return bad_words / len(self.badwords)
 
-    def has_negation(self,tokens):
+    def has_negation(self, tokens):
         negation_words = 0
         for negationword in self.negationwords:
             if negationword in tokens:
                 negation_words += 1
-        return negation_words/len(self.negationwords)
+        return negation_words / len(self.negationwords)
 
-    def has_smileys(self,text):
+    def has_smileys(self, text):
         if len(text) == 0:
-            return [0,0]
+            return [0, 0]
         positive_smileys = 0
         negative_smileys = 0
         for smiley in self.positive_smileys:
@@ -158,26 +160,26 @@ class FeatureExtractor:
         for smiley in self.negative_smileys:
             if smiley in text:
                 negative_smileys += text.count(smiley)
-        return [positive_smileys/len(text), negative_smileys/len(text)]
+        return [positive_smileys / len(text), negative_smileys / len(text)]
 
-
-    def has_whwords(self,tokens):
+    def has_whwords(self, tokens):
         wh_words = 0
         for token in tokens:
             if token in self.whwords:
                 wh_words += 1
-        return wh_words/len(self.whwords)
+        return wh_words / len(self.whwords)
 
-    def other_tokenizer(self,text):
+    def other_tokenizer(self, text):
         return nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '',
-                                           text.lower()))
-    def check_entities(self,text):
+                                         text.lower()))
+
+    def check_entities(self, text):
         entity_feats = []
         for annotation in self.entity_annotations:
             entity_feats.append(1) if annotation in text else entity_feats.append(0)
         return entity_feats
 
-    def extract_aux_feats(self, item, args,source_id, prev_id,embeddings,post_type):
+    def extract_aux_feats(self, item, args, source_id, prev_id, embeddings, post_type):
         aux_feats = []
         text = self.preprocess(item['text'])
         if 'post_role' in args:
@@ -206,14 +208,15 @@ class FeatureExtractor:
             aux_feats.append(self.has_negation(tokens))
         if 'whwords' in args:
             aux_feats.append(self.has_whwords(tokens))
-        if'qmark' in args:
+        if 'qmark' in args:
             aux_feats.append(1 if len(text) and '?' in text else 0)
-        if'excmark' in args:
+        if 'excmark' in args:
             aux_feats.append(1 if len(text) and '!' in text else 0)
         if 'tripdot' in args:
             aux_feats.append(1 if len(text) and '...' in text else 0)
         if 'capital' in args:
-            aux_feats.append(float(sum(1 for c in text if c.isupper()))/len(text)) if len(text) > 0 else aux_feats.append(0)
+            aux_feats.append(float(sum(1 for c in text if c.isupper())) / len(text)) if len(
+                text) > 0 else aux_feats.append(0)
         if 'smileys' in args:
             aux_feats.append(self.has_smileys(text))
         if 'named_entities' in args:
@@ -221,8 +224,6 @@ class FeatureExtractor:
                 aux_feats.append(score)
         return np.asarray(aux_feats)
 
-
     def sentence_embeddings(self, text):
         text = self.preprocess(text)
         return self.tool(text).vector
-
