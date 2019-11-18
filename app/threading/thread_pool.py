@@ -19,6 +19,7 @@ callback_queue = queue.Queue(maxsize=0)
 def tweet_queue_consumer():
     while True:
         d = received_tweet_queue.get(block=True)
+        log.info("tweet queue consumer {}".format(d['tweet_id']))
         log.info(str(d['callback_url']))
 
         conversation = d['connector'].get_conversation(d['tweet_id'])
@@ -36,6 +37,7 @@ def tweet_queue_consumer():
 def content_queue_consumer():
     while True:
         d = content_analysis_queue.get(block=True)
+        log.info("content queue consumer {}".format(d['tweet_id']))
 
         results = d['model'].estimate_veracity(conversation=d['conversation'])
         if results is None:
@@ -51,6 +53,7 @@ def content_queue_consumer():
 def callback_queue_consumer():
     while True:
         d = callback_queue.get(block=True)
+        log.info("callback queue consumer {}".format(d['tweet_id']))
 
         try:
             result = requests.post(url=d['callback_url'],
