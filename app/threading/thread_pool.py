@@ -90,7 +90,7 @@ class ThreadPool:
     def add(self, connector, tweet_id, model, callback_url):
         log.info('using pool process to execute twitter call async')
 
-        # todo: cant find if a set is concurrent in Python. Maybe needs a lock for true concurrency?
+        # todo: cant find if a set is concurrent in Python. Maybe needs a lock for thread safety?
         if tweet_id in tweet_set:
             raise HTTPException(status_code=400,
                                 detail='Tweet id is already in process')
