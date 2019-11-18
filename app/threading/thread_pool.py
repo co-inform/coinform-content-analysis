@@ -63,6 +63,12 @@ class ThreadPool:
         log.info('Thread pool created')
 
         # todo: maybe change the amount of workers for each ThreadPool?
+        # kanske snyggare lösning än den nedanför?
+        #        with concurrent.futures.thread.ThreadPoolExecutor(max_workers=24) as executor:
+        #            for n in range(start=1, stop=24):
+        #                executor.submit(tweet_queue_consumer)
+        #                executor.submit(content_queue_consumer)
+        #                executor.submit(callback_queue_consumer)
 
         self.fetchtweet_worker_pool = concurrent.futures.thread.ThreadPoolExecutor(max_workers=8,
                                                                                    thread_name_prefix='FetchTweetWorkerPool-')
@@ -75,7 +81,6 @@ class ThreadPool:
             self.fetchtweet_worker_pool.submit(tweet_queue_consumer)
             self.content_worker_pool.submit(content_queue_consumer)
             self.callback_worker_pool.submit(callback_queue_consumer)
-
 
     def __del__(self):
         self.callback_worker_pool.shutdown()
