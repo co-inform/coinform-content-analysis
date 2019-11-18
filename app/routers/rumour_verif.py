@@ -15,7 +15,7 @@ log.info('Starting rumour verification router.')
 
 router = APIRouter()
 
-log.info(settings.get_active_model()+' model has been selected.')
+log.info(settings.get_active_model() + ' model has been selected.')
 
 # if 'clearumor'== settings.get_active_model():
 #     model = clearumor.ClearRumorModel(utils.load_model_from_file(settings.get_stance_path()),
@@ -28,6 +28,7 @@ model = baseline.BaselineModel(settings.get_stance_path(), settings.get_verif_pa
 connector = twitter_service.TwitterService()
 
 pool = service_pool.ServicePool(num_threads=4)
+
 
 # Estimates stance of the tweet
 # It returns stance estimation for given post
@@ -46,21 +47,23 @@ def estimate_veracity(tweet_id: str = Path(..., title="The ID of the tweet to ge
     if results is not None:
         return results
 
+
 @router.get('/post/veracity_test/{tweet_id}')
-def estimate_veracity_post_test(callback_url: tweet.Callback, tweet_id: str = Path(..., title="The ID of the tweet to get")):
+def estimate_veracity_post_test(callback_url: tweet.Callback,
+                                tweet_id: str = Path(..., title="The ID of the tweet to get")):
     log.info('Get conversation of {}'.format(tweet_id))
     if pool.add(connector, tweet_id, model, callback_url.callback_url):
         return None
     else:
         raise HTTPException(status_code=500, detail='Cannot estimate veracity')
+
 
 @router.post('/post/veracity/{tweet_id}', response_model=tweet.Conversation)
-def estimate_veracity_post_veracity_tweet_id_get(callback_url: tweet.Callback,tweet_id: str = Path(..., title="The ID of the tweet to get")):
+def estimate_veracity_post_veracity_tweet_id_get(callback_url: tweet.Callback,
+                                                 tweet_id: str = Path(..., title="The ID of the tweet to get")):
+
     log.info('Get conversation of {}'.format(tweet_id))
     if pool.add(connector, tweet_id, model, callback_url.callback_url):
         return None
     else:
         raise HTTPException(status_code=500, detail='Cannot estimate veracity')
-
-
-
