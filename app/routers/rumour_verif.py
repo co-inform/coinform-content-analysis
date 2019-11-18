@@ -4,7 +4,8 @@ import logging
 from fastapi import APIRouter, HTTPException, Path
 from app.estimators import baseline
 from app.service import twitter_service
-from app.threading import service_pool
+#from app.threading import service_pool
+from app.threading import thread_pool
 
 from app.models import tweet
 
@@ -27,7 +28,8 @@ model = baseline.BaselineModel(settings.get_stance_path(), settings.get_verif_pa
 
 connector = twitter_service.TwitterService()
 
-pool = service_pool.ServicePool(num_threads=4)
+# pool = service_pool.ServicePool(num_threads=4)
+pool = thread_pool.ThreadPool(num_threads=4)
 
 
 # Estimates stance of the tweet
