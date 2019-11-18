@@ -3,7 +3,7 @@
 import logging
 import requests
 import json
-import app.settings as settings
+import settings as settings
 from typing import Dict
 
 logger = logging.getLogger('server')
