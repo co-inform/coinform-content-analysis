@@ -1,8 +1,8 @@
 import joblib
 import numpy as np
-from app.estimators import language_model, feature_extractor
+from estimators import language_model, feature_extractor
 import logging
-import app.settings as settings
+import settings as settings
 
 log = logging.getLogger('server')
 

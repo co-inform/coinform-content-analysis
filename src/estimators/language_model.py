@@ -1,7 +1,7 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pickle
 import sys
-import app.estimators.feature_extractor as feature_extractor
+import estimators.feature_extractor as feature_extractor
 import numpy as np
 
 

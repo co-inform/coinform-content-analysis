@@ -1,16 +1,16 @@
 version: '3.3'
 
-networks:
-  coinform:
-    # Use a custom driver
-    driver: bridge
+#networks:
+#  coinform:
+#    # Use a custom driver
+#    driver: bridge
 services:
   content_analysis:
-    build: .
-    networks:
-      - coinform
+    image: cc
+#    networks:
+#      - coinform
     ports:
       - "80:8000"
-    volumes:
-      - ./:/app
-    command: [ "uvicorn", '--reload', '--host', '0.0.0.0', 'app.server:app', '--port', '8000' ]
+#    volumes:
+#      - ./:/app
+    command: [ "uvicorn", '--reload', '--host', '0.0.0.0', 'server:app', '--port', '8000' ]

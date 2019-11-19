@@ -68,13 +68,30 @@ def callback_queue_consumer():
 
 class ThreadPool:
     def __init__(self, num_threads=8):
-        log.info('Thread pool created')
+        log.info('Thread pool created with {} threads / pool'.format(num_threads*3))
 
-        with concurrent.futures.thread.ThreadPoolExecutor(max_workers=3 * num_threads) as executor:
-            for n in range(num_threads):
-                executor.submit(tweet_queue_consumer)
-                executor.submit(content_queue_consumer)
-                executor.submit(callback_queue_consumer)
+#        with concurrent.futures.thread.ThreadPoolExecutor(max_workers=3 * num_threads) as executor:
+#            for n in range(num_threads):
+#                executor.submit(tweet_queue_consumer)
+#                executor.submit(content_queue_consumer)
+#                executor.submit(callback_queue_consumer)
+
+        self.fetchtweet_worker_pool = concurrent.futures.thread.ThreadPoolExecutor(max_workers=num_threads,
+                                                                                   thread_name_prefix="FetchTweetPool-")
+        self.content_worker_pool = concurrent.futures.thread.ThreadPoolExecutor(max_workers=num_threads,
+                                                                                thread_name_prefix="ContentWorkerPool-")
+        self.callback_worker_pool = concurrent.futures.thread.ThreadPoolExecutor(max_workers=num_threads,
+                                                                                 thread_name_prefix="CallbackWorkerPool-")
+
+        for n in range(num_threads):
+            self.fetchtweet_worker_pool.submit(tweet_queue_consumer)
+            self.content_worker_pool.submit(content_queue_consumer)
+            self.callback_worker_pool.submit(callback_queue_consumer)
+
+    def __del__(self):
+        self.fetchtweet_worker_pool.shutdown()
+        self.content_worker_pool.shutdown()
+        self.callback_worker_pool.shutdown()
 
     def add(self, connector, tweet_id, model, callback_url):
         log.info('using pool process to execute twitter call async')

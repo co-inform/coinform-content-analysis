@@ -4,17 +4,19 @@ import configparser
 
 # OR, explicitly providing path to '.env'
 from pathlib import Path  # python3 only
+import logging
 
 project_path = Path('.')
 env_path = project_path / 'config.ini'
+logging.info("config file: {}".format(env_path))
 config = configparser.ConfigParser()
 config.read(env_path)
 
 
 
 def convert_str(tup):
-    str =  ''.join(tup)
-    return str
+    s = ''.join(tup)
+    return s
 
 def get_stance_path():
     model_name = get_active_model() + '-Stance Model'
