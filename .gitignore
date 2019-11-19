@@ -15,4 +15,8 @@ venv/
 # config
 /config.ini
 
+# macOs
+.DS_Store
+**/.DS_Store
+
 
