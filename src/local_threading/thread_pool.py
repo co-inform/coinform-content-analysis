@@ -21,9 +21,17 @@ def tweet_queue_consumer():
         d = received_tweet_queue.get(block=True)
         log.info("tweet queue consumer {}".format(d['tweet_id']))
         log.info(str(d['callback_url']))
+        conversation = None
+        try:
+            conversation = d['connector'].get_conversation(d['tweet_id'])
+        except IOError as exc:
+            log.error("ioerror when fetching twitter conversation {}".format(exc))
+            with set_lock:
+                tweet_set.discard(d['tweet_id'])
+            raise IOError('Unable to get Twitter conversation')
 
-        conversation = d['connector'].get_conversation(d['tweet_id'])
         if conversation is None:
+            log.debug('twitter conversation empty')
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             raise IOError('Unable to get Twitter conversation')
@@ -68,7 +76,7 @@ def callback_queue_consumer():
 
 class ThreadPool:
     def __init__(self, num_threads=8):
-        log.info('Thread pool created with {} threads / pool'.format(num_threads*3))
+        log.info('Thread pool created with {} threads / pool'.format(num_threads))
 
 #        with concurrent.futures.thread.ThreadPoolExecutor(max_workers=3 * num_threads) as executor:
 #            for n in range(num_threads):

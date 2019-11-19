@@ -1,6 +1,6 @@
 import logging
 import requests
-import local_threading
+import threading
 from fastapi import HTTPException
 
 log = logging.getLogger('server')
@@ -38,7 +38,7 @@ class ServicePool:
 
     def add(self, connector, tweet_id, model, callback_url):
         log.info('using pool process to execute twitter call async')
-        t = local_threading.Thread(target=compute_result,
+        t = threading.Thread(target=compute_result,
                                    args=(connector, tweet_id, model, callback_url))
         if tweet_id in queue:
             raise HTTPException(status_code=400,
