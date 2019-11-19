@@ -1,0 +1,42 @@
+version: "3.3"
+services:
+  content_analysis:
+    image: cc
+    #    networks:
+    #      - coinform
+    ports:
+      - "80:8000"
+    #    volumes:
+    #      - ./:/app
+    command: [ "uvicorn", '--reload', '--host', '0.0.0.0', 'server:app', '--port', '8000' ]
+  connector:
+    image: connector/app:localdev
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    environment:
+      - TWITTER_KEY_0=xWABMUJMeNOFU965LEjrGPqBg
+      - TWITTER_SECRET_0=LPy8HDIaQHKxmgTL0c6JxceUGOo5wjmD5VjNiatnfnF5UUdfPr
+    command: ["uvicorn", "app.main:app","--host","0.0.0.0","--reload","--port", "8082"]
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./:/app
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:latest
+    container_name: "mongodb"
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    volumes:
+      - ./data/db:/data/db
+    ports:
+      - "27017:27017"
+    command: mongod
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1454
