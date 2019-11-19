@@ -1,6 +1,6 @@
-from app import settings
+import settings
 import logging
-import app.estimators.utils as utils
+import estimators.utils as utils
 import src.dataset as dataset
 import src.util as util
 import src.sdqc as sdqc
