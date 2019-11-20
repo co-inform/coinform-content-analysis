@@ -4,6 +4,7 @@ import concurrent.futures.thread
 from fastapi import HTTPException
 import queue
 import threading
+import json
 
 log = logging.getLogger('server')
 
@@ -62,13 +63,15 @@ def callback_queue_consumer():
     while True:
         d = callback_queue.get(block=True)
         log.info("callback queue consumer {}".format(d['tweet_id']))
+        log.info("callback url {}".format(d['callback_url']))
+        log.info("results dict {}".format(d['results']))
 
         try:
             result = requests.post(url=d['callback_url'],
-                                   json=d['results'])
+                                   json=json.dumps(d['results']))
             log.info(result.json())
         except requests.exceptions.RequestException as exc:
-            log.error('Request error: {}'.format(exc))
+            log.info('Request error: {}'.format(exc))
         finally:
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
