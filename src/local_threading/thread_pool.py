@@ -68,8 +68,10 @@ def callback_queue_consumer():
 
         try:
             result = requests.post(url=d['callback_url'],
-                                   json=json.dumps(d['results']))
-            log.info(result.json())
+                                   data=d['results'],
+                                   headers={'Content-Type': 'application/json'})
+            log.info("headers {}".format(result.headers))
+            log.info("result {}".format(result.json()))
         except requests.exceptions.RequestException as exc:
             log.info('Request error: {}'.format(exc))
         finally:
