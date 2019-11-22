@@ -104,6 +104,6 @@ class BaselineModel:
         source_response['veracity_unknown'] = verif_probs[2]
 
         response = {}
-        response['source']= source_response
+        response['response']= source_response
         response['replies'] = replies_response
         return response
