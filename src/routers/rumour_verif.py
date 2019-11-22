@@ -29,7 +29,7 @@ model = baseline.BaselineModel(settings.get_stance_path(), settings.get_verif_pa
 connector = twitter_service.TwitterService()
 
 #pool = service_pool.ServicePool(num_threads=4)
-pool = thread_pool.ThreadPool(num_threads=4)
+pool = thread_pool.ThreadPool(num_threads=8)
 
 
 # Estimates stance of the tweet
