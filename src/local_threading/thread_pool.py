@@ -19,14 +19,15 @@ callback_queue = queue.Queue(maxsize=0)
 
 def tweet_queue_consumer():
     while True:
+        log.info("received_tweet_queue size: {}".format(received_tweet_queue.qsize()))
         d = received_tweet_queue.get(block=True)
         log.info("tweet queue consumer {}".format(d['tweet_id']))
-        log.info(str(d['callback_url']))
+        #log.info(str(d['callback_url']))
         conversation = None
         try:
             conversation = d['connector'].get_conversation(d['tweet_id'])
         except BaseException as exc:
-            log.info("ioerror when fetching twitter conversation {}".format(exc))
+            log.info("ioerror when fetching twitter conversation {}".format(exc.args))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
@@ -41,11 +42,13 @@ def tweet_queue_consumer():
                                     "conversation": conversation,
                                     "model": d['model'],
                                     "callback_url": d['callback_url']})
+        log.info("rtq size: {}, caq size: {}".format(received_tweet_queue.qsize(), content_analysis_queue.qsize()))
 
 
 def content_queue_consumer():
     while True:
         d = content_analysis_queue.get(block=True)
+        log.info("caq size: {}".format(content_analysis_queue.qsize()))
         log.info("content queue consumer {}".format(d['tweet_id']))
 
         results = d['model'].estimate_veracity(conversation=d['conversation'])
@@ -58,6 +61,8 @@ def content_queue_consumer():
         callback_queue.put({"tweet_id": d['tweet_id'],
                             "results": results,
                             "callback_url": d['callback_url']})
+        log.info("caq size: {}, cbq size: {}".format(content_analysis_queue.qsize(), callback_queue.qsize()))
+
 
 
 def callback_queue_consumer():
@@ -65,7 +70,7 @@ def callback_queue_consumer():
         d = callback_queue.get(block=True)
         log.info("callback queue consumer {}".format(d['tweet_id']))
         log.info("callback url {}".format(d['callback_url']))
-        log.info("results dict {}".format(d['results']))
+        log.info("results dict {}".format(json.dumps(d['results'])))
 
         try:
             result = requests.post(url=d['callback_url'],
@@ -74,7 +79,6 @@ def callback_queue_consumer():
                                    headers={'Content-Type': 'application/json'})
 
             log.info("headers {}".format(result.headers))
-            log.info("result {}".format(result.json()))
         except requests.exceptions.RequestException as exc:
             log.info('Request error: {}'.format(exc))
         finally:
