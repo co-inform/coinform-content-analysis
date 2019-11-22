@@ -19,7 +19,7 @@ callback_queue = queue.Queue(maxsize=0)
 
 def tweet_queue_consumer():
     while True:
-        log.info("received_tweet_queue size: {}".format(received_tweet_queue.qsize()))
+        log.info("received_tweet_queue size: {}, thread {}".format(received_tweet_queue.qsize(), threading.current_thread().name))
         d = received_tweet_queue.get(block=True)
         log.info("tweet queue consumer {}, thread: {}".format(d['tweet_id'], threading.current_thread().name))
         #log.info(str(d['callback_url']))
