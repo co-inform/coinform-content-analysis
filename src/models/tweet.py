@@ -19,7 +19,7 @@ class Tweet(BaseModel):
     avg_stance_deny: Optional[float]
 
 class Conversation(BaseModel):
-    source: Tweet
+    response: Tweet
     replies: Dict[str,Tweet]
 
 class Callback(BaseModel):
