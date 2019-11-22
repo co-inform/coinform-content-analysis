@@ -69,7 +69,7 @@ def callback_queue_consumer():
 
         try:
             result = requests.post(url=d['callback_url'],
-                                   data=d['results'],
+                                   json=d['results'],
                                    timeout=15,
                                    headers={'Content-Type': 'application/json'})
 
