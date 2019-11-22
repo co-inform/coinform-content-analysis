@@ -27,13 +27,13 @@ def tweet_queue_consumer():
         try:
             conversation = d['connector'].get_conversation(d['tweet_id'])
         except BaseException as exc:
-            log.info("ioerror when fetching twitter conversation {}".format(exc.args))
+            log.info("ioerror when fetching twitter conversation {}, thread: {}".format(d['tweet_id'], threading.current_thread().name))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
 
         if conversation is None:
-            log.info('twitter conversation empty')
+            log.info('twitter conversation empty {}, thread: {}'.format(d['tweet_id'], threading.current_thread().name))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
