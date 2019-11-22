@@ -50,11 +50,20 @@ def content_queue_consumer():
         d = content_analysis_queue.get(block=True)
         log.info("caq size: {}".format(content_analysis_queue.qsize()))
         log.info("content queue consumer {}, thread {}".format(d['tweet_id'], threading.current_thread().name))
+        results = None
 
-        results = d['model'].estimate_veracity(conversation=d['conversation'])
-        if results is None:
+        try:
+            results = d['model'].estimate_veracity(conversation=d['conversation'])
+        except BaseException as exc:
+            log.info("Exception in content_queue_consumer. Thread {}, tweet_id: {}".format(threading.current_thread().name,
+                                                                                           d['tweet_id']))
             with set_lock:
-                log.info("Unadle to compute results for {}".format(d['tweet_id']))
+                tweet_set.discard(d['tweet_id'])
+            continue
+
+        if results is None:
+            log.info("Unable to compute results for {}".format(d['tweet_id']))
+            with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
 
