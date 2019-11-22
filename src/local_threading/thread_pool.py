@@ -67,7 +67,7 @@ def content_queue_consumer():
 def callback_queue_consumer():
     while True:
         d = callback_queue.get(block=True)
-        log.info("callback queue consumer {}, thread:".format(d['tweet_id']), threading.current_thread().name)
+        log.info("callback queue consumer {}, thread: {}".format(d['tweet_id'], threading.current_thread().name))
         log.info("callback url {}".format(d['callback_url']))
         log.info("results dict {}".format(json.dumps(d['results'])))
 
