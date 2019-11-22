@@ -26,7 +26,7 @@ def tweet_queue_consumer():
         try:
             conversation = d['connector'].get_conversation(d['tweet_id'])
         except BaseException as exc:
-            log.info("ioerror when fetching twitter conversation {}".format(exc))
+            log.info("ioerror when fetching twitter conversation {}".format(exc.args))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
@@ -74,9 +74,9 @@ def callback_queue_consumer():
                                    headers={'Content-Type': 'application/json'})
 
             log.info("headers {}".format(result.headers))
-            log.info("result {}".format(result.json()))
+            log.info("status_code {}".format(result.status_code))
         except requests.exceptions.RequestException as exc:
-            log.info('Request error: {}'.format(exc))
+            log.info('Request error: {}'.format(exc.args))
         finally:
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
