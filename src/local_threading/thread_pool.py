@@ -21,7 +21,7 @@ def tweet_queue_consumer():
     while True:
         log.info("received_tweet_queue size: {}".format(received_tweet_queue.qsize()))
         d = received_tweet_queue.get(block=True)
-        log.info("tweet queue consumer {}".format(d['tweet_id']))
+        log.info("tweet queue consumer {}, thread: {}".format(d['tweet_id'], threading.current_thread().name))
         #log.info(str(d['callback_url']))
         conversation = None
         try:
@@ -42,14 +42,14 @@ def tweet_queue_consumer():
                                     "conversation": conversation,
                                     "model": d['model'],
                                     "callback_url": d['callback_url']})
-        log.info("rtq size: {}, caq size: {}".format(received_tweet_queue.qsize(), content_analysis_queue.qsize()))
+        log.info("rtq size: {}, caq size: {}, thread {}".format(received_tweet_queue.qsize(), content_analysis_queue.qsize(), threading.current_thread().name))
 
 
 def content_queue_consumer():
     while True:
         d = content_analysis_queue.get(block=True)
         log.info("caq size: {}".format(content_analysis_queue.qsize()))
-        log.info("content queue consumer {}".format(d['tweet_id']))
+        log.info("content queue consumer {}, thread {}".format(d['tweet_id'], threading.current_thread().name))
 
         results = d['model'].estimate_veracity(conversation=d['conversation'])
         if results is None:
@@ -61,14 +61,13 @@ def content_queue_consumer():
         callback_queue.put({"tweet_id": d['tweet_id'],
                             "results": results,
                             "callback_url": d['callback_url']})
-        log.info("caq size: {}, cbq size: {}".format(content_analysis_queue.qsize(), callback_queue.qsize()))
-
+        log.info("caq size: {}, cbq size: {}, thread: {}".format(content_analysis_queue.qsize(), callback_queue.qsize(), threading.current_thread().name))
 
 
 def callback_queue_consumer():
     while True:
         d = callback_queue.get(block=True)
-        log.info("callback queue consumer {}".format(d['tweet_id']))
+        log.info("callback queue consumer {}, thread:".format(d['tweet_id']), threading.current_thread().name)
         log.info("callback url {}".format(d['callback_url']))
         log.info("results dict {}".format(json.dumps(d['results'])))
 
@@ -84,6 +83,10 @@ def callback_queue_consumer():
         finally:
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
+        log.info("Thread: {}, rtq size: {}, caq size: {}, cbq size {}".format(threading.current_thread().name,
+                                                                              received_tweet_queue.qsize(),
+                                                                              content_analysis_queue.qsize(),
+                                                                              callback_queue.qsize()))
 
 
 class ThreadPool:
