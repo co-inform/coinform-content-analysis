@@ -26,7 +26,7 @@ def tweet_queue_consumer():
         try:
             conversation = d['connector'].get_conversation(d['tweet_id'])
         except BaseException as exc:
-            log.info("ioerror when fetching twitter conversation {}".format(exc))
+            log.info("ioerror when fetching twitter conversation {}".format(exc.args))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
@@ -65,7 +65,7 @@ def callback_queue_consumer():
         d = callback_queue.get(block=True)
         log.info("callback queue consumer {}".format(d['tweet_id']))
         log.info("callback url {}".format(d['callback_url']))
-        log.info("results dict {}".format(d['results']))
+        log.info("results dict {}".format(json.dumps(d['results'])))
 
         try:
             result = requests.post(url=d['callback_url'],
