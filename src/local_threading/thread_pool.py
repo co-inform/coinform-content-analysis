@@ -25,17 +25,17 @@ def tweet_queue_consumer():
         conversation = None
         try:
             conversation = d['connector'].get_conversation(d['tweet_id'])
-        except IOError as exc:
-            log.error("ioerror when fetching twitter conversation {}".format(exc))
+        except BaseException as exc:
+            log.info("ioerror when fetching twitter conversation {}".format(exc))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
-            raise IOError('Unable to get Twitter conversation')
+            continue
 
         if conversation is None:
-            log.debug('twitter conversation empty')
+            log.info('twitter conversation empty')
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
-            raise IOError('Unable to get Twitter conversation')
+            continue
 
         content_analysis_queue.put({"tweet_id": d['tweet_id'],
                                     "conversation": conversation,
@@ -51,8 +51,9 @@ def content_queue_consumer():
         results = d['model'].estimate_veracity(conversation=d['conversation'])
         if results is None:
             with set_lock:
+                log.info("Unadle to compute results for {}".format(d['tweet_id']))
                 tweet_set.discard(d['tweet_id'])
-            raise Exception('Unable to compute results from conversation')
+            continue
 
         callback_queue.put({"tweet_id": d['tweet_id'],
                             "results": results,
@@ -69,7 +70,9 @@ def callback_queue_consumer():
         try:
             result = requests.post(url=d['callback_url'],
                                    data=d['results'],
+                                   timeout=15,
                                    headers={'Content-Type': 'application/json'})
+
             log.info("headers {}".format(result.headers))
             log.info("result {}".format(result.json()))
         except requests.exceptions.RequestException as exc:
