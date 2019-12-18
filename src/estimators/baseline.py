@@ -61,9 +61,7 @@ class BaselineModel:
 
         feats_replies = np.concatenate([bow_replies, feats_replies], axis=1)
 
-
-
-
+        feats_replies = np.where(np.isnan(feats_replies), 0, feats_replies)
         log.info(self.stance_model.predict_proba(feats_replies))
         log.info(self.stance_model.predict(feats_replies))
         replies_stance_dict = dict(zip(replies_id,self.stance_model.predict_proba(feats_replies)))
