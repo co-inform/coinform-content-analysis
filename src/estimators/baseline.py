@@ -109,4 +109,19 @@ class BaselineModel:
         response = {}
         response['response']= source_response
         response['replies'] = replies_response
+
+        ## compute credibility and confidence of the tweet
+        veracity_true = source_response['veracity_true']
+        veracity_false = source_response['veracity_false']
+        veracity_unknown = source_response['veracity_unknown']
+
+        cred_sum = veracity_true + veracity_false
+        winner = veracity_true if veracity_true > veracity_false else veracity_false
+        polarity = 1 if veracity_true > veracity_false else -1
+        cred = polarity * winner / cred_sum
+        conf = 1 - veracity_unknown
+
+        response['credibility'] = cred
+        response['confidence'] =  conf
+
         return response
