@@ -118,9 +118,10 @@ class BaselineModel:
         cred_sum = veracity_true + veracity_false
         winner = veracity_true if veracity_true > veracity_false else veracity_false
         polarity = 1 if veracity_true > veracity_false else -1
-        cred = polarity * winner / cred_sum
+        cred = (polarity * winner) / cred_sum
         conf = 1 - veracity_unknown
 
+        log.info('credibility {}, confidence {}'.format(cred, conf))
         response['credibility'] = cred
         response['confidence'] =  conf
 
