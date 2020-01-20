@@ -106,10 +106,6 @@ class BaselineModel:
         source_response['veracity_true'] = verif_probs[1]
         source_response['veracity_unknown'] = verif_probs[2]
 
-        response = {}
-        response['response']= source_response
-        response['replies'] = replies_response
-
         ## compute credibility and confidence of the tweet
         veracity_true = source_response['veracity_true']
         veracity_false = source_response['veracity_false']
@@ -121,8 +117,14 @@ class BaselineModel:
         cred = (polarity * winner) / cred_sum
         conf = 1 - veracity_unknown
 
-        log.info('credibility {}, confidence {}'.format(cred, conf))
-        response['credibility'] = cred
-        response['confidence'] =  conf
+        log.debug('credibility {}, confidence {}'.format(cred, conf))
+        source_response['credibility'] = cred
+        source_response['confidence'] =  conf
+
+        response = {}
+        response['response']= source_response
+        response['replies'] = replies_response
+
+
 
         return response
