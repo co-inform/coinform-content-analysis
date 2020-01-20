@@ -10,6 +10,8 @@ class Tweet(BaseModel):
     stance_support:float
     stance_query:float
     stance_deny:float
+    credibility: int
+    confidence: float
     veracity_false: Optional[float]
     veracity_true: Optional[float]
     veracity_unknown: Optional[float]
