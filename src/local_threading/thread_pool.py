@@ -31,7 +31,7 @@ def tweet_queue_consumer():
 
             # Return "null" if no result could be computed
             request.post(url=d['callback_url'],
-                         json='{"response":""}',
+                         json='{"response":{}, "status": "FAILED"}',
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
 
@@ -44,7 +44,7 @@ def tweet_queue_consumer():
 
             # Return "null" if no result could be computed
             request.post(url=d['callback_url'],
-                         json='{"response":""}',
+                         json='{"response":{}, "status": "FAILED"}',
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
 
@@ -74,7 +74,7 @@ def content_queue_consumer():
 
             # Return "null" if no result could be computed
             request.post(url=d['callback_url'],
-                         json='{"response":""}',
+                         json='{"response":{}, "status": "FAILED"}',
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
             with set_lock:
@@ -86,7 +86,7 @@ def content_queue_consumer():
             
             # Return "null" if no result could be computed
             request.post(url=d['callback_url'],
-                         json='{"response":""}',
+                         json='{"response":{}, "status": "FAILED"}',
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
 
