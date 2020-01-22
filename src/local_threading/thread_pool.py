@@ -24,16 +24,30 @@ def tweet_queue_consumer():
         log.info("tweet queue consumer {}, thread: {}".format(d['tweet_id'], threading.current_thread().name))
         #log.info(str(d['callback_url']))
         conversation = None
-        try:
+        try: 
             conversation = d['connector'].get_conversation(d['tweet_id'])
         except BaseException as exc:
             log.info("ioerror when fetching twitter conversation {}, thread: {}".format(d['tweet_id'], threading.current_thread().name))
+
+            # Return "null" if no result could be computed
+            request.post(url=d['callback_url'],
+                         json='{"response":""}',
+                         timeout=15,
+                         headers={'Content-Type': 'application/json'})
+
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
 
         if conversation is None:
             log.info('twitter conversation empty {}, thread: {}'.format(d['tweet_id'], threading.current_thread().name))
+
+            # Return "null" if no result could be computed
+            request.post(url=d['callback_url'],
+                         json='{"response":""}',
+                         timeout=15,
+                         headers={'Content-Type': 'application/json'})
+
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
@@ -57,12 +71,25 @@ def content_queue_consumer():
         except BaseException as exc:
             log.info("Exception in content_queue_consumer. Thread {}, tweet_id: {}".format(threading.current_thread().name,
                                                                                            d['tweet_id']))
+
+            # Return "null" if no result could be computed
+            request.post(url=d['callback_url'],
+                         json='{"response":""}',
+                         timeout=15,
+                         headers={'Content-Type': 'application/json'})
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
 
         if results is None:
             log.info("Unable to compute results for {}".format(d['tweet_id']))
+            
+            # Return "null" if no result could be computed
+            request.post(url=d['callback_url'],
+                         json='{"response":""}',
+                         timeout=15,
+                         headers={'Content-Type': 'application/json'})
+
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
