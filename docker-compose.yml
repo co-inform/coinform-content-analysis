@@ -4,11 +4,17 @@ version: '3.3'
 #  coinform:
 #    # Use a custom driver
 #    driver: bridge
+networks:
+  coinform:
+    # Use a custom driver
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1200
 services:
   content_analysis:
     image: cc
-#    networks:
-#      - coinform
+    networks:
+      - coinform
     ports:
       - "80:8000"
 #    volumes:

@@ -114,8 +114,9 @@ def callback_queue_consumer():
                                    headers={'Content-Type': 'application/json'})
 
             log.info("headers {}".format(result.headers))
+            log.info("status_code {}".format(result.status_code))
         except requests.exceptions.RequestException as exc:
-            log.info('Request error: {}'.format(exc))
+            log.info('Request error: {}'.format(exc.args))
         finally:
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
