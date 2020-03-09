@@ -31,9 +31,9 @@ def tweet_queue_consumer():
 
             # Return "null" if no result could be computed
             response = {}
-            response['source']['id'] = d['tweet_id']
-            response['source']['credibility'] = 0.0
-            response['source']['confidence'] = 0.0
+            response['response']['source']['id'] = d['tweet_id']
+            response['response']['source']['credibility'] = 0.0
+            response['response']['source']['confidence'] = 0.0
             request.post(url=d['callback_url'],
                          json=response,
                          timeout=15,
@@ -48,9 +48,9 @@ def tweet_queue_consumer():
 
             # Return "null" if no result could be computed
             response = {}
-            response['source']['id'] = d['tweet_id']
-            response['source']['credibility'] = 0.0
-            response['source']['confidence'] = 0.0
+            response['response']['source']['id'] = d['tweet_id']
+            response['response']['source']['credibility'] = 0.0
+            response['response']['source']['confidence'] = 0.0
             request.post(url=d['callback_url'],
                          json=response,
                          timeout=15,
@@ -82,9 +82,9 @@ def content_queue_consumer():
 
             # Return "null" if no result could be computed
             response = {}
-            response['source']['id'] = d['tweet_id']
-            response['source']['credibility'] = 0.0
-            response['source']['confidence'] = 0.0
+            response['response']['source']['id'] = d['tweet_id']
+            response['response']['source']['credibility'] = 0.0
+            response['response']['source']['confidence'] = 0.0
             request.post(url=d['callback_url'],
                          json=response,
                          timeout=15,
@@ -98,9 +98,9 @@ def content_queue_consumer():
             
             # Return "null" if no result could be computed
             response = {}
-            response['source']['id'] = d['tweet_id']
-            response['source']['credibility'] = 0.0
-            response['source']['confidence'] = 0.0
+            response['response']['source']['id'] = d['tweet_id']
+            response['response']['source']['credibility'] = 0.0
+            response['response']['source']['confidence'] = 0.0
             request.post(url=d['callback_url'],
                          json=response,
                          timeout=15,
