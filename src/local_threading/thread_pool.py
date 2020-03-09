@@ -30,8 +30,12 @@ def tweet_queue_consumer():
             log.info("ioerror when fetching twitter conversation {}, thread: {}".format(d['tweet_id'], threading.current_thread().name))
 
             # Return "null" if no result could be computed
+            response = {}
+            response['source']['id'] = d['tweet_id']
+            response['source']['credibility'] = 0.0
+            response['source']['confidence'] = 0.0
             request.post(url=d['callback_url'],
-                         json='{"response":{}, "status": "FAILED"}',
+                         json=response,
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
 
@@ -43,8 +47,12 @@ def tweet_queue_consumer():
             log.info('twitter conversation empty {}, thread: {}'.format(d['tweet_id'], threading.current_thread().name))
 
             # Return "null" if no result could be computed
+            response = {}
+            response['source']['id'] = d['tweet_id']
+            response['source']['credibility'] = 0.0
+            response['source']['confidence'] = 0.0
             request.post(url=d['callback_url'],
-                         json='{"response":{}, "status": "FAILED"}',
+                         json=response,
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
 
@@ -73,8 +81,12 @@ def content_queue_consumer():
                                                                                            d['tweet_id']))
 
             # Return "null" if no result could be computed
+            response = {}
+            response['source']['id'] = d['tweet_id']
+            response['source']['credibility'] = 0.0
+            response['source']['confidence'] = 0.0
             request.post(url=d['callback_url'],
-                         json='{"response":{}, "status": "FAILED"}',
+                         json=response,
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
             with set_lock:
@@ -85,8 +97,12 @@ def content_queue_consumer():
             log.info("Unable to compute results for {}".format(d['tweet_id']))
             
             # Return "null" if no result could be computed
+            response = {}
+            response['source']['id'] = d['tweet_id']
+            response['source']['credibility'] = 0.0
+            response['source']['confidence'] = 0.0
             request.post(url=d['callback_url'],
-                         json='{"response":{}, "status": "FAILED"}',
+                         json=response,
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
 
