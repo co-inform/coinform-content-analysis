@@ -34,11 +34,12 @@ def tweet_queue_consumer():
             response['response']['source']['id'] = d['tweet_id']
             response['response']['source']['credibility'] = 0.0
             response['response']['source']['confidence'] = 0.0
-            request.post(url=d['callback_url'],
+            result = requests.post(url=d['callback_url'],
                          json=response,
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
 
+            log.info("Sent null response with status code: {}".format(result.status_code))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
@@ -51,11 +52,12 @@ def tweet_queue_consumer():
             response['response']['source']['id'] = d['tweet_id']
             response['response']['source']['credibility'] = 0.0
             response['response']['source']['confidence'] = 0.0
-            request.post(url=d['callback_url'],
+            result = requests.post(url=d['callback_url'],
                          json=response,
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
 
+            log.info("Sent null response with status code: {}".format(result.status_code))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
@@ -85,10 +87,11 @@ def content_queue_consumer():
             response['response']['source']['id'] = d['tweet_id']
             response['response']['source']['credibility'] = 0.0
             response['response']['source']['confidence'] = 0.0
-            request.post(url=d['callback_url'],
+            result = requests.post(url=d['callback_url'],
                          json=response,
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
+            log.info("Sent null response with status code: {}".format(result.status_code))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
@@ -101,11 +104,11 @@ def content_queue_consumer():
             response['response']['source']['id'] = d['tweet_id']
             response['response']['source']['credibility'] = 0.0
             response['response']['source']['confidence'] = 0.0
-            request.post(url=d['callback_url'],
+            result = requests.post(url=d['callback_url'],
                          json=response,
                          timeout=15,
                          headers={'Content-Type': 'application/json'})
-
+            log.info("Sent null response with status code: {}".format(result.status_code))
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
