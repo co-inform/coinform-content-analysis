@@ -27,37 +27,45 @@ def tweet_queue_consumer():
         try: 
             conversation = d['connector'].get_conversation(d['tweet_id'])
         except BaseException as exc:
-            log.info("ioerror when fetching twitter conversation {}, thread: {}".format(d['tweet_id'], threading.current_thread().name))
+            try:
+                log.info("ioerror when fetching twitter conversation {}, thread: {}".format(d['tweet_id'], threading.current_thread().name))
 
-            # Return "null" if no result could be computed
-            response = {}
-            response['response']['source']['id'] = d['tweet_id']
-            response['response']['source']['credibility'] = 0.0
-            response['response']['source']['confidence'] = 0.0
-            result = requests.post(url=d['callback_url'],
-                         json=response,
-                         timeout=15,
-                         headers={'Content-Type': 'application/json'})
+                # Return "null" if no result could be computed
+                response = {}
+                response['response']['source']['id'] = d['tweet_id']
+                response['response']['source']['credibility'] = 0.0
+                response['response']['source']['confidence'] = 0.0
+                result = requests.post(url=d['callback_url'],
+                             json=response,
+                             timeout=15,
+                             headers={'Content-Type': 'application/json'})
 
-            log.info("Sent null response with status code: {}".format(result.status_code))
+                log.info("Sent null response with status code: {}".format(result.status_code))
+            except requests.exceptions.RequestException as e:
+                log.info("Sending null response throw exception {}".format(str(e)))
+
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
 
         if conversation is None:
-            log.info('twitter conversation empty {}, thread: {}'.format(d['tweet_id'], threading.current_thread().name))
+            try:
+                log.info('twitter conversation empty {}, thread: {}'.format(d['tweet_id'], threading.current_thread().name))
 
-            # Return "null" if no result could be computed
-            response = {}
-            response['response']['source']['id'] = d['tweet_id']
-            response['response']['source']['credibility'] = 0.0
-            response['response']['source']['confidence'] = 0.0
-            result = requests.post(url=d['callback_url'],
-                         json=response,
-                         timeout=15,
-                         headers={'Content-Type': 'application/json'})
+                # Return "null" if no result could be computed
+                response = {}
+                response['response']['source']['id'] = d['tweet_id']
+                response['response']['source']['credibility'] = 0.0
+                response['response']['source']['confidence'] = 0.0
+                result = requests.post(url=d['callback_url'],
+                             json=response,
+                             timeout=15,
+                             headers={'Content-Type': 'application/json'})
 
-            log.info("Sent null response with status code: {}".format(result.status_code))
+                log.info("Sent null response with status code: {}".format(result.status_code))
+            except requests.exceptions.RequestException as e:
+                log.info("Sending null response throw exception {}".format(str(e)))
+
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
@@ -79,36 +87,46 @@ def content_queue_consumer():
         try:
             results = d['model'].estimate_veracity(conversation=d['conversation'])
         except BaseException as exc:
-            log.info("Exception in content_queue_consumer. Thread {}, tweet_id: {}".format(threading.current_thread().name,
-                                                                                           d['tweet_id']))
+            try:
 
-            # Return "null" if no result could be computed
-            response = {}
-            response['response']['source']['id'] = d['tweet_id']
-            response['response']['source']['credibility'] = 0.0
-            response['response']['source']['confidence'] = 0.0
-            result = requests.post(url=d['callback_url'],
-                         json=response,
-                         timeout=15,
-                         headers={'Content-Type': 'application/json'})
-            log.info("Sent null response with status code: {}".format(result.status_code))
+                log.info("Exception in content_queue_consumer. Thread {}, tweet_id: {}".format(threading.current_thread().name,
+                                                                                               d['tweet_id']))
+
+                # Return "null" if no result could be computed
+                response = {}
+                response['response']['source']['id'] = d['tweet_id']
+                response['response']['source']['credibility'] = 0.0
+                response['response']['source']['confidence'] = 0.0
+                result = requests.post(url=d['callback_url'],
+                             json=response,
+                             timeout=15,
+                             headers={'Content-Type': 'application/json'})
+                log.info("Sent null response with status code: {}".format(result.status_code))
+            except requests.exceptions.RequestException as e:
+                log.info("Sending null response throw exception {}".format(str(e)))
+
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
 
         if results is None:
-            log.info("Unable to compute results for {}".format(d['tweet_id']))
-            
-            # Return "null" if no result could be computed
-            response = {}
-            response['response']['source']['id'] = d['tweet_id']
-            response['response']['source']['credibility'] = 0.0
-            response['response']['source']['confidence'] = 0.0
-            result = requests.post(url=d['callback_url'],
-                         json=response,
-                         timeout=15,
-                         headers={'Content-Type': 'application/json'})
-            log.info("Sent null response with status code: {}".format(result.status_code))
+            try:
+                
+                log.info("Unable to compute results for {}".format(d['tweet_id']))
+                
+                # Return "null" if no result could be computed
+                response = {}
+                response['response']['source']['id'] = d['tweet_id']
+                response['response']['source']['credibility'] = 0.0
+                response['response']['source']['confidence'] = 0.0
+                result = requests.post(url=d['callback_url'],
+                             json=response,
+                             timeout=15,
+                             headers={'Content-Type': 'application/json'})
+                log.info("Sent null response with status code: {}".format(result.status_code))
+            except requests.exceptions.RequestException as e:
+                log.info("Sending null response throw exception {}".format(str(e)))
+
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
             continue
@@ -135,7 +153,7 @@ def callback_queue_consumer():
             log.info("headers {}".format(result.headers))
             log.info("status_code {}".format(result.status_code))
         except requests.exceptions.RequestException as exc:
-            log.info('Request error: {}'.format(exc.args))
+            log.info('Request error: {}'.format(str(exc)))
         finally:
             with set_lock:
                 tweet_set.discard(d['tweet_id'])
