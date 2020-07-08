@@ -1,7 +1,7 @@
 # Co-Inform Content Analysis
 
 This is one of module of Co-Inform platform developed by [WeST](https://west.uni-koblenz.de/). It performs textual analysis of posts. Currently it processes Twitter post.
-This repository contains the declaration for the API of [coinform-content-analysis] (http://co-inform.informatik.uni-stuttgart.de/docs).
+This repository contains the declaration for the API of [coinform-content-analysis](http://co-inform.informatik.uni-stuttgart.de/docs).
 
 It has following features:
 - Stance detection `app/routers/rumour_verif.py`
