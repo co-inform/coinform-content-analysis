@@ -13,6 +13,8 @@ networks:
 services:
   content_analysis:
     image: cc
+    depends_on:
+      - twitter_connector
     networks:
       - coinform
     ports:
@@ -20,3 +22,31 @@ services:
 #    volumes:
 #      - ./:/app
     command: [ "uvicorn", '--reload', '--host', '0.0.0.0', 'server:app', '--port', '8000' ]
+  twitter_connector:
+    image: twitter_connector:latest
+    environment:
+      - TWITTER_KEY_0=************************
+      - TWITTER_SECRET_0=******************************
+    networks:
+      - coinform
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./:/app
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:latest
+    container_name: "mongodb"
+    networks:
+      - coinform
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    volumes:
+      - ./data/db:/data/db
+    ports:
+      - "27017:27017"
+    command: mongod
+
+
