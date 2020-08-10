@@ -120,26 +120,25 @@ class Trainer:
             torch.save(model.state_dict(), "model/bert_" + str(epoch) + ".pt")
 
     def predict(self, dataloader, text):
-        if text is not None:  # todo: refactor :/
-            tokens = self.tokenizer.encode_plus(
+        if text is not None:
+            tokens = self.tokenizer.encode(
                 text,
                 max_length=self.max_seq_length,
                 pad_to_max_length=True,
-                truncation=True
+                truncation=True,
+                return_tensors='pt'
             )
-
-            seq = torch.tensor(tokens['input_ids'])
 
             with torch.no_grad():
                 self.model.eval()
 
-                data = self.model(input_ids=seq)
+                data = self.model(input_ids=tokens)
 
-                sm = softmax(data)
+                sm = softmax(data[0].detach().numpy())
 
-                preds = [np.argmax(xd) for xd in data[0].detach().numpy()]
+                preds = np.argmax(data[0].detach().numpy())
 
-                return self.idx2label[preds[0]], sm[preds[0]]
+                return self.idx2label[preds], sm[0][preds]
 
         pred_list = []
         with torch.no_grad():
@@ -192,7 +191,7 @@ def main():
     # test
     df_dev_re = pd.read_csv("rumeval_dev.tsv", sep='\t')  # use for test after model selection
     df_dev_re = pd.concat([df_dev_re, df_test], axis=0, sort=False, join='inner') # 10 percent of twitter 15-16 + rumeval dev
-    model.load_state_dict(torch.load("model/bert_4.pt"))
+    model.load_state_dict(torch.load("model/bert_4_28_test.pt"))
 
     text, labels = df_dev_re['text'], df_dev_re['label']
 
@@ -225,9 +224,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    # m = SimpleBERT("")
-    # rsp = m.estimate_veracity({'source': {
-    #     "id": 1,
-    #     "text": 'Very tense situation in Ottawa this morning.  Multiple gun shots fired outside of our caucus room.  I am safe and in lockdown. Unbelievable.'}})
-    # print()
+    # main()
+    m = SimpleBERT("")
+    rsp = m.estimate_veracity({'source': {
+        "id": 1,
+        "text": 'Very tense situation in Ottawa this morning.  Multiple gun shots fired outside of our caucus room.  I am safe and in lockdown. Unbelievable.'}})
+    print()
