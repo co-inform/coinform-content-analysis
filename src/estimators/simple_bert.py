@@ -176,7 +176,7 @@ def main():
 
     df_test = df.sample(frac=0.1)
 
-    df = df.loc[~df.index.isin(df_dev.index)]
+    df = df.loc[~df.index.isin(df_test.index)]
 
     df = pd.concat([df_re, df], axis=0, sort=False, join='inner')
 
@@ -186,12 +186,12 @@ def main():
     model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
 
     trainer = Trainer(model, tokenizer)
-    trainer.train(df, df_dev, 8, 5)
+    # trainer.train(df, df_dev, 8, 5)
 
     # test
     df_dev_re = pd.read_csv("rumeval_dev.tsv", sep='\t')  # use for test after model selection
     df_dev_re = pd.concat([df_dev_re, df_test], axis=0, sort=False, join='inner') # 10 percent of twitter 15-16 + rumeval dev
-    model.load_state_dict(torch.load("model/bert_4_28_test.pt"))
+    model.load_state_dict(torch.load("model/bert_3.pt"))
 
     text, labels = df_dev_re['text'], df_dev_re['label']
 
@@ -224,9 +224,9 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-    m = SimpleBERT("")
-    rsp = m.estimate_veracity({'source': {
-        "id": 1,
-        "text": 'Very tense situation in Ottawa this morning.  Multiple gun shots fired outside of our caucus room.  I am safe and in lockdown. Unbelievable.'}})
-    print()
+    main()
+    # m = SimpleBERT("")
+    # rsp = m.estimate_veracity({'source': {
+    #     "id": 1,
+    #     "text": 'Very tense situation in Ottawa this morning.  Multiple gun shots fired outside of our caucus room.  I am safe and in lockdown. Unbelievable.'}})
+    # print()
