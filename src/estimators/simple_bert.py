@@ -21,7 +21,7 @@ log = logging.getLogger('server')
 class SimpleBERT:
     def __init__(self, model_path: str):
         model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
-        model.load_state_dict(torch.load("model/bert_4_28_test.pt"))
+        model.load_state_dict(torch.load("model/bert_1_best.pt"))
 
         self.model = model
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -30,7 +30,7 @@ class SimpleBERT:
         source = conversation['source']
 
         trainer = Trainer(self.model, self.tokenizer)
-        credibility, conf = trainer.predict(None, source['text'])
+        credibility, conf = trainer.predict(source['text'])
 
         source_response = {'id': source['id'], 'text': source['text']}
 
@@ -119,44 +119,53 @@ class Trainer:
 
             torch.save(model.state_dict(), "model/bert_" + str(epoch) + ".pt")
 
-    def predict(self, dataloader, text):
-        if text is not None:
-            tokens = self.tokenizer.encode(
-                text,
-                max_length=self.max_seq_length,
-                pad_to_max_length=True,
-                truncation=True,
-                return_tensors='pt'
-            )
+    def predict(self, text):
+        tokens = self.tokenizer.encode(
+            text,
+            max_length=self.max_seq_length,
+            pad_to_max_length=True,
+            truncation=True,
+            return_tensors='pt'
+        )
 
-            with torch.no_grad():
-                self.model.eval()
+        with torch.no_grad():
+            self.model.eval()
 
-                data = self.model(input_ids=tokens)
+            data = self.model(input_ids=tokens)
 
-                sm = softmax(data[0].detach().numpy())
+            sm = softmax(data[0].detach().numpy())
 
-                preds = np.argmax(data[0].detach().numpy())
+            sm = sm.flatten()
 
-                return self.idx2label[preds], sm[0][preds]
+            veracity_false = sm[0]
+            veracity_true = sm[1]
+            veracity_unknown = sm[2]
 
+            # copied from baseline.py
+            cred_sum = veracity_true + veracity_false
+            winner = veracity_true if veracity_true > veracity_false else veracity_false
+            polarity = 1 if veracity_true > veracity_false else -1
+            cred = polarity * winner / cred_sum
+            conf = 1 - veracity_unknown
+
+            # preds = np.argmax(data[0].detach().numpy())
+
+            # return self.idx2label[preds], sm[0][preds]
+            return cred, conf
+
+    def evaluate(self, items, labels):
         pred_list = []
         with torch.no_grad():
             self.model.eval()
 
-            for step, batch in enumerate(dataloader):
+            for step, batch in enumerate(items):
                 x, m, y = batch
                 data = self.model(input_ids=x, attention_mask=m)
 
                 preds = [np.argmax(xd) for xd in data[0].detach().numpy()]
                 pred_list += preds
 
-        return pred_list
-
-    def evaluate(self, items, labels):
-        preds_list = self.predict(items, None)
-
-        precision, recall, f_score, _ = precision_recall_fscore_support(labels, preds_list, average='macro')
+        precision, recall, f_score, _ = precision_recall_fscore_support(labels, pred_list, average='macro')
 
         results = {
             "precision": precision,
@@ -171,7 +180,11 @@ def main():
     # data
     df_re = pd.read_csv("rumeval.tsv", sep='\t')
     df = pd.read_csv("tweeter1516.tsv", sep='\t')
+
     df_dev = df.sample(frac=0.1)  # use as the development set
+    df_dev_re = pd.read_csv("rumeval_dev.tsv", sep='\t')
+    df_dev = pd.concat([df_dev, df_dev_re], axis=0, sort=False, join='inner')
+
     df = df.loc[~df.index.isin(df_dev.index)]
 
     df_test = df.sample(frac=0.1)
@@ -189,9 +202,9 @@ def main():
     # trainer.train(df, df_dev, 8, 5)
 
     # test
-    df_dev_re = pd.read_csv("rumeval_dev.tsv", sep='\t')  # use for test after model selection
-    df_dev_re = pd.concat([df_dev_re, df_test], axis=0, sort=False, join='inner') # 10 percent of twitter 15-16 + rumeval dev
-    model.load_state_dict(torch.load("model/bert_3.pt"))
+    rumeval_test = pd.read_csv("rumeval_test.tsv", sep='\t')
+    df_dev_re = pd.concat([rumeval_test, df_test], axis=0, sort=False, join='inner') # 10 percent of twitter 15-16 + rumeval dev
+    model.load_state_dict(torch.load("model/bert_1_best.pt"))
 
     text, labels = df_dev_re['text'], df_dev_re['label']
 
@@ -217,10 +230,10 @@ def main():
     for key in sorted(results.keys()):
         print(key, str(results[key]))
 
-    # rumeval dev
-    # f1 0.6349206349206349
-    # precision 0.6349206349206349
-    # recall 0.6666666666666666
+    # rumeval test + 10 percent of twitter15/16
+    # f1 0.8285199834435829
+    # precision 0.8320027864855449
+    # recall 0.8404404523045578
 
 
 if __name__ == '__main__':
