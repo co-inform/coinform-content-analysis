@@ -2,14 +2,13 @@ import settings
 import logging
 
 from fastapi import APIRouter, HTTPException, Path
-from estimators import baseline
+from estimators import baseline, simple_bert
 from service import twitter_service
-#from local_threading import service_pool
+# from local_threading import service_pool
 from local_threading import thread_pool
 
 from models import tweet
 
-import json
 
 log = logging.getLogger('server')
 log.info('Starting rumour verification router.')
@@ -22,9 +21,11 @@ log.info(settings.get_active_model() + ' model has been selected.')
 #     model = clearumor.ClearRumorModel(utils.load_model_from_file(settings.get_stance_path()),
 #                                             utils.load_model_from_file(settings.get_verif_path()))
 # else:
-#
 
-model = baseline.BaselineModel(settings.get_stance_path(), settings.get_verif_path())
+if 'bert' == settings.get_active_model():
+    model = simple_bert.SimpleBERT(settings.get_verif_path())
+else:
+    model = baseline.BaselineModel(settings.get_stance_path(), settings.get_verif_path())
 
 connector = twitter_service.TwitterService()
 

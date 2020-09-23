@@ -20,8 +20,9 @@ log = logging.getLogger('server')
 
 class SimpleBERT:
     def __init__(self, model_path: str):
-        model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
-        model.load_state_dict(torch.load("model/bert_1_best.pt"))
+        model_state_dict = torch.load(model_path)
+        model = BertForSequenceClassification.from_pretrained("bert-base-uncased", state_dict=model_state_dict,
+                                                              num_labels=3)
 
         self.model = model
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -54,7 +55,7 @@ class Trainer:
         self.device = device
         self.tokenizer = tokenizer
         self.label2idx = {"true": 1, "false": 0, "unverified": 2}
-        self.idx2label = {0: "false", 1: "true", 2: "unverified"}
+        self.idx2label = {v: k for k, v in self.label2idx.items()}
 
     def train(self, train_set, valid_set, batch_size, num_epochs):
         train_text, train_labels = train_set['text'], train_set['label']
@@ -77,9 +78,10 @@ class Trainer:
         train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=batch_size)
 
         valid_text, valid_labels = valid_set['text'], valid_set['label']
+        valid_text = [tiny_preprocess(str(t)) for t in valid_text]
 
         tokens_valid = self.tokenizer.batch_encode_plus(
-            valid_text.values,
+            valid_text,
             max_length=self.max_seq_length,
             pad_to_max_length=True,
             truncation=True
@@ -108,7 +110,6 @@ class Trainer:
                 loss, data = model(input_ids=x, attention_mask=m, labels=y)
 
                 loss.backward()
-                # print("\nloss: " + str(loss))
                 optimizer.step()
 
             print("\nEpoch: " + str(epoch) + "__________________________\n")
@@ -117,7 +118,7 @@ class Trainer:
             for key in sorted(results.keys()):
                 print(key, str(results[key]))
 
-            torch.save(model.state_dict(), "model/bert_" + str(epoch) + ".pt")
+            torch.save(model.state_dict(), "model/fine_tune/bert_1_best_" + str(epoch) + ".pt")
 
     def predict(self, text):
         tokens = self.tokenizer.encode(
@@ -147,10 +148,8 @@ class Trainer:
             polarity = 1 if veracity_true > veracity_false else -1
             cred = polarity * winner / cred_sum
             conf = 1 - veracity_unknown
+            #
 
-            # preds = np.argmax(data[0].detach().numpy())
-
-            # return self.idx2label[preds], sm[0][preds]
             return cred, conf
 
     def evaluate(self, items, labels):
@@ -176,26 +175,33 @@ class Trainer:
         return results
 
 
-def main():
-    # data
-    df_re = pd.read_csv("rumeval.tsv", sep='\t')
-    df = pd.read_csv("tweeter1516.tsv", sep='\t')
+def train():
+    df = pd.read_csv("coinform4550_split/coinform4550_train_merged.tsv", sep='\t')
+    # df_re = pd.read_csv("rumeval.tsv", sep='\t')
+    # df_1516 = pd.read_csv("tweeter1516_non_rum_to_unverified.tsv", sep='\t')
+    # df_rest = pd.read_csv("coinform4550_split/coinform4550_rest_merged_clean.tsv", sep='\t', error_bad_lines=False)
+
+    # df = pd.concat([df, df_1516], axis=0, sort=False, join='inner')
 
     df_dev = df.sample(frac=0.1)  # use as the development set
-    df_dev_re = pd.read_csv("rumeval_dev.tsv", sep='\t')
-    df_dev = pd.concat([df_dev, df_dev_re], axis=0, sort=False, join='inner')
+    # df_dev.to_csv('all_and_rest_dev.csv', index=False)
+    # df_dev_re = pd.read_csv("rumeval_dev.tsv", sep='\t')
 
     df = df.loc[~df.index.isin(df_dev.index)]
 
-    df_test = df.sample(frac=0.1)
+    df_dev = pd.concat([df_dev], axis=0, sort=False, join='inner')
 
-    df = df.loc[~df.index.isin(df_test.index)]
+    # df_test = df.sample(frac=0.1)
+    # df_test.to_csv('tweeter1516_test_04_09_fine_tune.csv', index=False)
 
-    df = pd.concat([df_re, df], axis=0, sort=False, join='inner')
+    # df_test = pd.read_csv("coinform4550_split/coinform4550_train.tsv", sep='\t')
+
+    # df = df.loc[~df.index.isin(df_test.index)]
+
+    df = pd.concat([df], axis=0, sort=False, join='inner')
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-    # train
     model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
 
     trainer = Trainer(model, tokenizer)
@@ -236,9 +242,9 @@ def main():
     # recall 0.8404404523045578
 
 
-if __name__ == '__main__':
-    main()
-    # m = SimpleBERT("")
+# if __name__ == '__main__':
+    # train()
+    # m = SimpleBERT("model/fine_tune/bert_1_best_1.pt")
     # rsp = m.estimate_veracity({'source': {
     #     "id": 1,
     #     "text": 'Very tense situation in Ottawa this morning.  Multiple gun shots fired outside of our caucus room.  I am safe and in lockdown. Unbelievable.'}})
