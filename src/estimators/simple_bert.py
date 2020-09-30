@@ -17,21 +17,40 @@ from tqdm import tqdm
 
 log = logging.getLogger('server')
 
+tokens_replies = ["stcmm_0", "stdny_0", "stqry_0", "stspp_0",
+                  "stcmm_1", "stdny_1", "stqry_1", "stspp_1",
+                  "stcmm_2", "stdny_2", "stqry_2", "stspp_2",
+                  "stcmm_3", "stdny_3", "stqry_3", "stspp_3"]
+
 
 class SimpleBERT:
-    def __init__(self, model_path: str):
+    def __init__(self, model_path: str, stance_model_path: str):
         model_state_dict = torch.load(model_path)
-        model = BertForSequenceClassification.from_pretrained("bert-base-uncased", state_dict=model_state_dict,
+        model = BertForSequenceClassification.from_pretrained("bert-base-uncased",
                                                               num_labels=3)
-
         self.model = model
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.tokenizer.add_tokens(tokens_replies)
+        self.model.resize_token_embeddings(len(self.tokenizer))
+
+        model.load_state_dict(model_state_dict)
+
+        # stance stuff
+        with open(stance_model_path, 'rb') as f:
+            self.stance_model = joblib.load(f)
+        self.feat_extractor = feature_extractor.FeatureExtractor()
+        self.aux_feats = ['post_role', 'sentiment_analyzer', 'similarity', 'num_url', 'num_hashtag', 'num_mention',
+                          'badwords', 'hasnegation', 'whwords',
+                          'qmark', 'excmark', 'tripdot', 'smiley', 'named_entities']
 
     def estimate_veracity(self, conversation):
         source = conversation['source']
 
+        add = self.count_replies((source['id'], source["text"]), source["replies"])
+        text = source["text"] + " " + add
+
         trainer = Trainer(self.model, self.tokenizer)
-        credibility, conf = trainer.predict(source['text'])
+        credibility, conf = trainer.predict(text)
 
         source_response = {'id': source['id'], 'text': source['text']}
 
@@ -41,19 +60,99 @@ class SimpleBERT:
 
         return {'response': source_response}
 
+    def count_replies(self, id_text, replies):
+        """
+        Creates a string that contains four token types with counts of each type of reply
+        the source tweet has.
+
+        stcmm - number of comments
+        stdny - number of denying replies
+        stqry - number of queries
+        stspp - number of supporting replies
+
+        :param id_text: source tweet text and id tuple
+        :param replies: replies to tweet
+        :return: a string of four tokens with count of different types of replies
+        """
+        if len(replies) == 0:
+            return "stcmm_0 stdny_0 stqry_0 stspp_0"
+
+        id, text = id_text
+        bow_source = [self.feat_extractor.sentence_embeddings(text)]
+
+        bow_replies = []
+        for reply in replies:
+            bow_replies.append(self.feat_extractor.sentence_embeddings(reply['text']))
+
+        bow_all = bow_replies + bow_source
+        replies_id = [item['id'] for item in replies]
+
+        id_all = replies_id + [id]
+
+        embeddings = dict(zip(id_all, bow_all))
+
+        feats_replies = []
+        for i in range(len(replies)):
+            if i == 0:
+                feats_replies.append(
+                    self.feat_extractor.extract_aux_feats(replies[i], self.aux_feats, source_id=id,
+                                                          prev_id=None,
+                                                          embeddings=embeddings, post_type=0))
+            else:
+                feats_replies.append(
+                    self.feat_extractor.extract_aux_feats(replies[i], self.aux_feats, source_id=id,
+                                                          prev_id=replies[i - 1]['id'],
+                                                          embeddings=embeddings, post_type=0))
+        if len(feats_replies) > 0:
+            feats_replies = np.concatenate([bow_replies, feats_replies], axis=1)
+
+            feats_replies = np.where(np.isnan(feats_replies), 0, feats_replies)
+
+            replies_stance_dict = dict(zip(replies_id, self.stance_model.predict_proba(feats_replies)))
+            s_c = s_d = s_q = s_s = 0
+            for _, value in replies_stance_dict.items():
+                a = value.tolist()
+
+                idx = a.index(max(a))
+                if idx == 0:
+                    s_c += 1
+                elif idx == 1:
+                    s_d += 1
+                elif idx == 2:
+                    s_q += 1
+                elif idx == 3:
+                    s_s += 1
+
+            return "stcmm_" + str(map_to_range(s_c)) + " stdny_" + str(map_to_range(s_d)) + \
+                   " stqry_" + str(map_to_range(s_q)) + " stspp_" + str(map_to_range(s_s))
+
+
+def map_to_range(n):
+    if n == 0:
+        return 0
+    if 10 > n >= 1:
+        return 0
+    if 50 > n >= 10:
+        return 3
+    if n >= 50:
+        return 4
+
 
 class Trainer:
     def __init__(
             self,
             model: BertForSequenceClassification,
             tokenizer: BertTokenizer,
-            max_seq_length: int = 280,
+            max_seq_length: int = 315,
             device: Union[torch.device, str] = 'cpu'
     ):
         self.max_seq_length = max_seq_length
         self.model = model
         self.device = device
         self.tokenizer = tokenizer
+        self.tokenizer.add_tokens(tokens_replies)
+        self.model.resize_token_embeddings(len(tokenizer))
+
         self.label2idx = {"true": 1, "false": 0, "unverified": 2}
         self.idx2label = {v: k for k, v in self.label2idx.items()}
 
@@ -118,7 +217,7 @@ class Trainer:
             for key in sorted(results.keys()):
                 print(key, str(results[key]))
 
-            torch.save(model.state_dict(), "model/fine_tune/bert_1_best_" + str(epoch) + ".pt")
+            torch.save(model.state_dict(), "model/new_fine_tune_replies/bert_" + str(epoch) + ".pt")
 
     def predict(self, text):
         tokens = self.tokenizer.encode(
@@ -176,29 +275,43 @@ class Trainer:
 
 
 def train():
-    df = pd.read_csv("coinform4550_split/coinform4550_train_merged.tsv", sep='\t')
-    # df_re = pd.read_csv("rumeval.tsv", sep='\t')
-    # df_1516 = pd.read_csv("tweeter1516_non_rum_to_unverified.tsv", sep='\t')
-    # df_rest = pd.read_csv("coinform4550_split/coinform4550_rest_merged_clean.tsv", sep='\t', error_bad_lines=False)
+    bb = SimpleBERT("", "data/models/baseline.pkl")
 
-    # df = pd.concat([df, df_1516], axis=0, sort=False, join='inner')
+    model_f_t = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
+    model_f_t.load_state_dict(torch.load("model/fine_tune/bert_BEST.pt"))
+
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    tokenizer.add_tokens(tokens_replies)
+
+    model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
+    model.bert.load_state_dict(model_f_t.bert.state_dict())
+    model.resize_token_embeddings(len(tokenizer))
+
+    trainer = Trainer(model, tokenizer)
+
+    df = pd.read_csv("coinform4550_split/coinform4550_train_merged.tsv", sep='\t')
+    df = df.dropna(subset=['text', 'id', 'label'])
+    df['id'] = df['id'].astype(int)
+
+    replies = load_replies()
+    for i, row in df.iterrows():
+        id = str(row["id"])
+        if id in replies:
+            replies_ = replies[id]
+        else:
+            replies_ = []
+        add = bb.count_replies((id, row["text"]), replies_)
+        df.at[i, 'text'] = row['text'] + " " + add
 
     df_dev = df.sample(frac=0.1)  # use as the development set
-    # df_dev.to_csv('all_and_rest_dev.csv', index=False)
-    # df_dev_re = pd.read_csv("rumeval_dev.tsv", sep='\t')
+    df_dev.to_csv('coinform_4550_train_dev.csv', index=False)
 
     df = df.loc[~df.index.isin(df_dev.index)]
 
-    df_dev = pd.concat([df_dev], axis=0, sort=False, join='inner')
+    # df_dev = pd.concat([df_dev], axis=0, sort=False, join='inner')
+    # df = pd.concat([df], axis=0, sort=False, join='inner')
 
-    # df_test = df.sample(frac=0.1)
-    # df_test.to_csv('tweeter1516_test_04_09_fine_tune.csv', index=False)
-
-    # df_test = pd.read_csv("coinform4550_split/coinform4550_train.tsv", sep='\t')
-
-    # df = df.loc[~df.index.isin(df_test.index)]
-
-    df = pd.concat([df], axis=0, sort=False, join='inner')
+    trainer.train(df, df_dev, 8, 10)
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
@@ -233,19 +346,6 @@ def train():
 
     results = trainer.evaluate(dataloader, enc_labels)
 
-    for key in sorted(results.keys()):
-        print(key, str(results[key]))
-
-    # rumeval test + 10 percent of twitter15/16
-    # f1 0.8285199834435829
-    # precision 0.8320027864855449
-    # recall 0.8404404523045578
-
-
 # if __name__ == '__main__':
-    # train()
-    # m = SimpleBERT("model/fine_tune/bert_1_best_1.pt")
-    # rsp = m.estimate_veracity({'source': {
-    #     "id": 1,
-    #     "text": 'Very tense situation in Ottawa this morning.  Multiple gun shots fired outside of our caucus room.  I am safe and in lockdown. Unbelievable.'}})
-    # print()
+#     train()
+#     predict_all()

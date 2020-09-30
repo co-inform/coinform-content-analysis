@@ -23,7 +23,7 @@ log.info(settings.get_active_model() + ' model has been selected.')
 # else:
 
 if 'bert' == settings.get_active_model():
-    model = simple_bert.SimpleBERT(settings.get_verif_path())
+    model = simple_bert.SimpleBERT(settings.get_verif_path(), settings.get_stance_path())
 else:
     model = baseline.BaselineModel(settings.get_stance_path(), settings.get_verif_path())
 
