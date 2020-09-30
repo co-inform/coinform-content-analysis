@@ -12,6 +12,11 @@ from sklearn.metrics import precision_recall_fscore_support
 from scipy.special import softmax
 
 import pandas as pd
+import re
+import joblib
+
+from estimators.baseline import load_replies
+from estimators import feature_extractor
 
 from tqdm import tqdm
 
@@ -158,9 +163,10 @@ class Trainer:
 
     def train(self, train_set, valid_set, batch_size, num_epochs):
         train_text, train_labels = train_set['text'], train_set['label']
+        train_text = [tiny_preprocess(str(t)) for t in train_text]
 
         tokens_train = self.tokenizer.batch_encode_plus(
-            train_text.values,
+            train_text,
             max_length=self.max_seq_length,
             pad_to_max_length=True,
             truncation=True
@@ -313,38 +319,48 @@ def train():
 
     trainer.train(df, df_dev, 8, 10)
 
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-    model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
+def tiny_preprocess(text):
+    text = re.sub("http://\S+|https://\S+", 'URL', text, flags=re.MULTILINE)
+    text = text.replace("\n", "")
+    text = text.lower()
+    text = re.sub(r'@\S+', '', text, flags=re.MULTILINE)
+    text = re.sub(r"(.)\1+", r"\1\1", text)
+    text = text.replace('  ', ' ')
 
-    trainer = Trainer(model, tokenizer)
-    # trainer.train(df, df_dev, 8, 5)
+    return text
 
-    # test
-    rumeval_test = pd.read_csv("rumeval_test.tsv", sep='\t')
-    df_dev_re = pd.concat([rumeval_test, df_test], axis=0, sort=False, join='inner') # 10 percent of twitter 15-16 + rumeval dev
-    model.load_state_dict(torch.load("model/bert_1_best.pt"))
 
-    text, labels = df_dev_re['text'], df_dev_re['label']
+def predict_all():
+    m = SimpleBERT("model/new_fine_tune_replies/bert_veracity.pt", "data/models/baseline.pkl")
 
-    tokens = tokenizer.batch_encode_plus(
-        text.values,
-        max_length=280,
-        pad_to_max_length=True,
-        truncation=True
-    )
+    tweet_id_replies = load_replies()
 
-    enc_labels = [trainer.label2idx[x] for x in labels.values]
+    with open("coinform4550_split/coinform4550_test.tsv") as f, open("predict_BEST_new_fine_tune_replies_2.tsv",
+                                                                     "w") as fo:
+        fo.write("id\tcred\tconf\n")
+        n = 0
+        for l in f:
+            if n == 0:
+                n += 1
+                continue
+            parts = l.split('\t')
+            if len(parts[0]) == 0:
+                continue
 
-    seq = torch.tensor(tokens['input_ids'])
-    mask = torch.tensor(tokens['attention_mask'])
-    y = torch.tensor(enc_labels)
+            text = tiny_preprocess(parts[0])
+            id = parts[2]
 
-    data = TensorDataset(seq, mask, y)
-    sampler = SequentialSampler(data)
-    dataloader = DataLoader(data, sampler=sampler, batch_size=8)
+            replies = []
+            if id in tweet_id_replies:
+                replies = tweet_id_replies[id]
 
-    results = trainer.evaluate(dataloader, enc_labels)
+            rsp = m.estimate_veracity({'source': {
+                "id": id,
+                "text": text,
+                "replies": replies}})
+            fo.write(parts[2] + '\t' + str(rsp['response']['credibility']) + '\t' + str(
+                rsp['response']['confidence']) + '\n')
 
 # if __name__ == '__main__':
 #     train()
