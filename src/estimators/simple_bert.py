@@ -51,7 +51,7 @@ class SimpleBERT:
     def estimate_veracity(self, conversation):
         source = conversation['source']
 
-        add, replies_response = self.count_replies((source['id'], source["text"]), source["replies"])
+        add, replies_response = self.count_replies((source['id'], source["text"]), conversation["replies"])
         text = source["text"] + " " + add
 
         trainer = Trainer(self.model, self.tokenizer)
@@ -63,9 +63,7 @@ class SimpleBERT:
         source_response['credibility'] = credibility
         source_response['confidence'] = conf
 
-        response = {}
-        response['response'] = source_response
-        response['replies'] = replies_response
+        response = {'response': source_response, 'replies': replies_response}
 
         return response
 
@@ -374,10 +372,11 @@ def tiny_preprocess(text):
 #                 rsp['response']['confidence']) + '\n')
 
 # if __name__ == '__main__':
-    # train()
-    # predict_all()
-    # s = SimpleBERT("model/new_fine_tune_replies/bert_veracity.pt", "data/models/baseline.pkl")
-    # c = {"source": {"id": 123, "text": "I hate apples"},
-    #     "replies": [{"id": 123, "text":"Me too"}]}
-    # rrr = s.estimate_veracity(c)
-    # print()
+#     # train()
+#     # predict_all()
+#     s = SimpleBERT("model/new_fine_tune_replies/bert_veracity.pt", "data/models/baseline.pkl")
+#     c = {"source": {"id": 123, "text": "I hate apples"} ,
+#     "replies": [{"id": 123, "text": "Me too"}]
+#     }
+#     rrr = s.estimate_veracity(c)
+#     print()
