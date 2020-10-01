@@ -15,7 +15,7 @@ import pandas as pd
 import re
 import joblib
 
-from estimators.baseline import load_replies
+# from estimators.baseline import load_replies
 from estimators import feature_extractor
 
 from tqdm import tqdm
@@ -280,44 +280,44 @@ class Trainer:
         return results
 
 
-def train():
-    bb = SimpleBERT("", "data/models/baseline.pkl")
-
-    model_f_t = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
-    model_f_t.load_state_dict(torch.load("model/fine_tune/bert_BEST.pt"))
-
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    tokenizer.add_tokens(tokens_replies)
-
-    model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
-    model.bert.load_state_dict(model_f_t.bert.state_dict())
-    model.resize_token_embeddings(len(tokenizer))
-
-    trainer = Trainer(model, tokenizer)
-
-    df = pd.read_csv("coinform4550_split/coinform4550_train_merged.tsv", sep='\t')
-    df = df.dropna(subset=['text', 'id', 'label'])
-    df['id'] = df['id'].astype(int)
-
-    replies = load_replies()
-    for i, row in df.iterrows():
-        id = str(row["id"])
-        if id in replies:
-            replies_ = replies[id]
-        else:
-            replies_ = []
-        add = bb.count_replies((id, row["text"]), replies_)
-        df.at[i, 'text'] = row['text'] + " " + add
-
-    df_dev = df.sample(frac=0.1)  # use as the development set
-    df_dev.to_csv('coinform_4550_train_dev.csv', index=False)
-
-    df = df.loc[~df.index.isin(df_dev.index)]
-
-    # df_dev = pd.concat([df_dev], axis=0, sort=False, join='inner')
-    # df = pd.concat([df], axis=0, sort=False, join='inner')
-
-    trainer.train(df, df_dev, 8, 10)
+# def train():
+#     bb = SimpleBERT("", "data/models/baseline.pkl")
+#
+#     model_f_t = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
+#     model_f_t.load_state_dict(torch.load("model/fine_tune/bert_BEST.pt"))
+#
+#     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+#     tokenizer.add_tokens(tokens_replies)
+#
+#     model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
+#     model.bert.load_state_dict(model_f_t.bert.state_dict())
+#     model.resize_token_embeddings(len(tokenizer))
+#
+#     trainer = Trainer(model, tokenizer)
+#
+#     df = pd.read_csv("coinform4550_split/coinform4550_train_merged.tsv", sep='\t')
+#     df = df.dropna(subset=['text', 'id', 'label'])
+#     df['id'] = df['id'].astype(int)
+#
+#     replies = load_replies()
+#     for i, row in df.iterrows():
+#         id = str(row["id"])
+#         if id in replies:
+#             replies_ = replies[id]
+#         else:
+#             replies_ = []
+#         add = bb.count_replies((id, row["text"]), replies_)
+#         df.at[i, 'text'] = row['text'] + " " + add
+#
+#     df_dev = df.sample(frac=0.1)  # use as the development set
+#     df_dev.to_csv('coinform_4550_train_dev.csv', index=False)
+#
+#     df = df.loc[~df.index.isin(df_dev.index)]
+#
+#     # df_dev = pd.concat([df_dev], axis=0, sort=False, join='inner')
+#     # df = pd.concat([df], axis=0, sort=False, join='inner')
+#
+#     trainer.train(df, df_dev, 8, 10)
 
 
 def tiny_preprocess(text):
@@ -331,36 +331,36 @@ def tiny_preprocess(text):
     return text
 
 
-def predict_all():
-    m = SimpleBERT("model/new_fine_tune_replies/bert_veracity.pt", "data/models/baseline.pkl")
-
-    tweet_id_replies = load_replies()
-
-    with open("coinform4550_split/coinform4550_test.tsv") as f, open("predict_BEST_new_fine_tune_replies_2.tsv",
-                                                                     "w") as fo:
-        fo.write("id\tcred\tconf\n")
-        n = 0
-        for l in f:
-            if n == 0:
-                n += 1
-                continue
-            parts = l.split('\t')
-            if len(parts[0]) == 0:
-                continue
-
-            text = tiny_preprocess(parts[0])
-            id = parts[2]
-
-            replies = []
-            if id in tweet_id_replies:
-                replies = tweet_id_replies[id]
-
-            rsp = m.estimate_veracity({'source': {
-                "id": id,
-                "text": text,
-                "replies": replies}})
-            fo.write(parts[2] + '\t' + str(rsp['response']['credibility']) + '\t' + str(
-                rsp['response']['confidence']) + '\n')
+# def predict_all():
+#     m = SimpleBERT("model/new_fine_tune_replies/bert_veracity.pt", "data/models/baseline.pkl")
+#
+#     tweet_id_replies = load_replies()
+#
+#     with open("coinform4550_split/coinform4550_test.tsv") as f, open("predict_BEST_new_fine_tune_replies_2.tsv",
+#                                                                      "w") as fo:
+#         fo.write("id\tcred\tconf\n")
+#         n = 0
+#         for l in f:
+#             if n == 0:
+#                 n += 1
+#                 continue
+#             parts = l.split('\t')
+#             if len(parts[0]) == 0:
+#                 continue
+#
+#             text = tiny_preprocess(parts[0])
+#             id = parts[2]
+#
+#             replies = []
+#             if id in tweet_id_replies:
+#                 replies = tweet_id_replies[id]
+#
+#             rsp = m.estimate_veracity({'source': {
+#                 "id": id,
+#                 "text": text,
+#                 "replies": replies}})
+#             fo.write(parts[2] + '\t' + str(rsp['response']['credibility']) + '\t' + str(
+#                 rsp['response']['confidence']) + '\n')
 
 # if __name__ == '__main__':
 #     train()
