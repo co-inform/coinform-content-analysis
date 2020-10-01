@@ -51,7 +51,7 @@ class SimpleBERT:
     def estimate_veracity(self, conversation):
         source = conversation['source']
 
-        add = self.count_replies((source['id'], source["text"]), source["replies"])
+        add, replies_response = self.count_replies((source['id'], source["text"]), source["replies"])
         text = source["text"] + " " + add
 
         trainer = Trainer(self.model, self.tokenizer)
@@ -63,7 +63,11 @@ class SimpleBERT:
         source_response['credibility'] = credibility
         source_response['confidence'] = conf
 
-        return {'response': source_response}
+        response = {}
+        response['response'] = source_response
+        response['replies'] = replies_response
+
+        return response
 
     def count_replies(self, id_text, replies):
         """
@@ -86,7 +90,9 @@ class SimpleBERT:
         bow_source = [self.feat_extractor.sentence_embeddings(text)]
 
         bow_replies = []
+        replies_response = {}
         for reply in replies:
+            replies_response[reply['id']] = reply
             bow_replies.append(self.feat_extractor.sentence_embeddings(reply['text']))
 
         bow_all = bow_replies + bow_source
@@ -115,7 +121,12 @@ class SimpleBERT:
 
             replies_stance_dict = dict(zip(replies_id, self.stance_model.predict_proba(feats_replies)))
             s_c = s_d = s_q = s_s = 0
-            for _, value in replies_stance_dict.items():
+            for id, value in replies_stance_dict.items():
+                replies_response[id]['stance_comment'] = value[0]
+                replies_response[id]['stance_deny'] = value[1]
+                replies_response[id]['stance_query'] = value[2]
+                replies_response[id]['stance_support'] = value[3]
+
                 a = value.tolist()
 
                 idx = a.index(max(a))
@@ -129,7 +140,7 @@ class SimpleBERT:
                     s_s += 1
 
             return "stcmm_" + str(map_to_range(s_c)) + " stdny_" + str(map_to_range(s_d)) + \
-                   " stqry_" + str(map_to_range(s_q)) + " stspp_" + str(map_to_range(s_s))
+                   " stqry_" + str(map_to_range(s_q)) + " stspp_" + str(map_to_range(s_s)), replies_response
 
 
 def map_to_range(n):
@@ -363,5 +374,10 @@ def tiny_preprocess(text):
 #                 rsp['response']['confidence']) + '\n')
 
 # if __name__ == '__main__':
-#     train()
-#     predict_all()
+    # train()
+    # predict_all()
+    # s = SimpleBERT("model/new_fine_tune_replies/bert_veracity.pt", "data/models/baseline.pkl")
+    # c = {"source": {"id": 123, "text": "I hate apples"},
+    #     "replies": [{"id": 123, "text":"Me too"}]}
+    # rrr = s.estimate_veracity(c)
+    # print()
