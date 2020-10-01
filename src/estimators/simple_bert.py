@@ -11,7 +11,7 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from sklearn.metrics import precision_recall_fscore_support
 from scipy.special import softmax
 
-import pandas as pd
+# import pandas as pd
 import re
 import joblib
 
@@ -50,42 +50,13 @@ class SimpleBERT:
 
     def estimate_veracity(self, conversation):
         source = conversation['source']
-
-        add, replies_response = self.count_replies((source['id'], source["text"]), conversation["replies"])
-        text = source["text"] + " " + add
-
-        trainer = Trainer(self.model, self.tokenizer)
-        credibility, conf = trainer.predict(text)
+        replies = conversation['replies']
 
         source_response = {'id': source['id'], 'text': source['text']}
 
-        log.info('credibility {}, confidence {}'.format(credibility, conf))
-        source_response['credibility'] = credibility
-        source_response['confidence'] = conf
+        add = "stcmm_0 stdny_0 stqry_0 stspp_0"
 
-        response = {'response': source_response, 'replies': replies_response}
-
-        return response
-
-    def count_replies(self, id_text, replies):
-        """
-        Creates a string that contains four token types with counts of each type of reply
-        the source tweet has.
-
-        stcmm - number of comments
-        stdny - number of denying replies
-        stqry - number of queries
-        stspp - number of supporting replies
-
-        :param id_text: source tweet text and id tuple
-        :param replies: replies to tweet
-        :return: a string of four tokens with count of different types of replies
-        """
-        if len(replies) == 0:
-            return "stcmm_0 stdny_0 stqry_0 stspp_0"
-
-        id, text = id_text
-        bow_source = [self.feat_extractor.sentence_embeddings(text)]
+        bow_source = [self.feat_extractor.sentence_embeddings(source['text'])]
 
         bow_replies = []
         replies_response = {}
@@ -96,20 +67,23 @@ class SimpleBERT:
         bow_all = bow_replies + bow_source
         replies_id = [item['id'] for item in replies]
 
-        id_all = replies_id + [id]
+        id_all = replies_id + [source['id']]
 
         embeddings = dict(zip(id_all, bow_all))
+        feats_source = self.feat_extractor.extract_aux_feats(source, self.aux_feats, source_id=source['id'],
+                                                             prev_id=None,
+                                                             embeddings=embeddings, post_type=1)
 
         feats_replies = []
         for i in range(len(replies)):
             if i == 0:
                 feats_replies.append(
-                    self.feat_extractor.extract_aux_feats(replies[i], self.aux_feats, source_id=id,
+                    self.feat_extractor.extract_aux_feats(replies[i], self.aux_feats, source_id=source['id'],
                                                           prev_id=None,
                                                           embeddings=embeddings, post_type=0))
             else:
                 feats_replies.append(
-                    self.feat_extractor.extract_aux_feats(replies[i], self.aux_feats, source_id=id,
+                    self.feat_extractor.extract_aux_feats(replies[i], self.aux_feats, source_id=source['id'],
                                                           prev_id=replies[i - 1]['id'],
                                                           embeddings=embeddings, post_type=0))
         if len(feats_replies) > 0:
@@ -137,8 +111,120 @@ class SimpleBERT:
                 elif idx == 3:
                     s_s += 1
 
-            return "stcmm_" + str(map_to_range(s_c)) + " stdny_" + str(map_to_range(s_d)) + \
-                   " stqry_" + str(map_to_range(s_q)) + " stspp_" + str(map_to_range(s_s)), replies_response
+            add = "stcmm_" + str(map_to_range(s_c)) + " stdny_" + str(map_to_range(s_d)) + \
+                   " stqry_" + str(map_to_range(s_q)) + " stspp_" + str(map_to_range(s_s))
+
+            source_response['avg_stance_comment'] = float(
+                sum(value[0] for value in replies_stance_dict.values()) / replies_stance_dict.values().__len__())
+            source_response['avg_stance_deny'] = float(
+                sum(value[1] for value in replies_stance_dict.values()) / replies_stance_dict.values().__len__())
+            source_response['avg_stance_query'] = float(
+                sum(value[2] for value in replies_stance_dict.values()) / replies_stance_dict.values().__len__())
+            source_response['avg_stance_support'] = float(
+                sum(value[3] for value in replies_stance_dict.values()) / replies_stance_dict.__len__())
+        else:
+            source_response['avg_stance_comment'] = 0.0
+            source_response['avg_stance_deny'] = 0.0
+            source_response['avg_stance_query'] = 0.0
+            source_response['avg_stance_support'] = 0.0
+
+        feats_source = np.concatenate([np.asarray(bow_source), feats_source.reshape(1, -1)], axis=1)
+
+        probs = self.stance_model.predict_proba(feats_source)[0]
+        source_response['stance_comment'] = probs[0]
+        source_response['stance_deny'] = probs[1]
+        source_response['stance_query'] = probs[2]
+        source_response['stance_support'] = probs[3]
+
+        # veracity
+        trainer = Trainer(self.model, self.tokenizer)
+        text = source["text"] + " " + add
+        cred, conf, veracity_false, veracity_true, veracity_unknown = trainer.predict(text)
+
+        source_response['veracity_false'] = veracity_false
+        source_response['veracity_true'] = veracity_true
+        source_response['veracity_unknown'] = veracity_unknown
+
+        log.info('credibility {}, confidence {}'.format(cred, conf))
+        source_response['credibility'] = cred
+        source_response['confidence'] = conf
+
+        response = {'response': source_response, 'replies': replies_response}
+
+        return response
+
+    # def count_replies(self, id_text, replies):
+    #     """
+    #     Creates a string that contains four token types with counts of each type of reply
+    #     the source tweet has.
+    #
+    #     stcmm - number of comments
+    #     stdny - number of denying replies
+    #     stqry - number of queries
+    #     stspp - number of supporting replies
+    #
+    #     :param id_text: source tweet text and id tuple
+    #     :param replies: replies to tweet
+    #     :return: a string of four tokens with count of different types of replies
+    #     """
+    #     if len(replies) == 0:
+    #         return "stcmm_0 stdny_0 stqry_0 stspp_0"
+    #
+    #     id, text = id_text
+    #     bow_source = [self.feat_extractor.sentence_embeddings(text)]
+    #
+    #     bow_replies = []
+    #     replies_response = {}
+    #     for reply in replies:
+    #         replies_response[reply['id']] = reply
+    #         bow_replies.append(self.feat_extractor.sentence_embeddings(reply['text']))
+    #
+    #     bow_all = bow_replies + bow_source
+    #     replies_id = [item['id'] for item in replies]
+    #
+    #     id_all = replies_id + [id]
+    #
+    #     embeddings = dict(zip(id_all, bow_all))
+    #
+    #     feats_replies = []
+    #     for i in range(len(replies)):
+    #         if i == 0:
+    #             feats_replies.append(
+    #                 self.feat_extractor.extract_aux_feats(replies[i], self.aux_feats, source_id=id,
+    #                                                       prev_id=None,
+    #                                                       embeddings=embeddings, post_type=0))
+    #         else:
+    #             feats_replies.append(
+    #                 self.feat_extractor.extract_aux_feats(replies[i], self.aux_feats, source_id=id,
+    #                                                       prev_id=replies[i - 1]['id'],
+    #                                                       embeddings=embeddings, post_type=0))
+    #     if len(feats_replies) > 0:
+    #         feats_replies = np.concatenate([bow_replies, feats_replies], axis=1)
+    #
+    #         feats_replies = np.where(np.isnan(feats_replies), 0, feats_replies)
+    #
+    #         replies_stance_dict = dict(zip(replies_id, self.stance_model.predict_proba(feats_replies)))
+    #         s_c = s_d = s_q = s_s = 0
+    #         for id, value in replies_stance_dict.items():
+    #             replies_response[id]['stance_comment'] = value[0]
+    #             replies_response[id]['stance_deny'] = value[1]
+    #             replies_response[id]['stance_query'] = value[2]
+    #             replies_response[id]['stance_support'] = value[3]
+    #
+    #             a = value.tolist()
+    #
+    #             idx = a.index(max(a))
+    #             if idx == 0:
+    #                 s_c += 1
+    #             elif idx == 1:
+    #                 s_d += 1
+    #             elif idx == 2:
+    #                 s_q += 1
+    #             elif idx == 3:
+    #                 s_s += 1
+    #
+    #         return "stcmm_" + str(map_to_range(s_c)) + " stdny_" + str(map_to_range(s_d)) + \
+    #                " stqry_" + str(map_to_range(s_q)) + " stspp_" + str(map_to_range(s_s)), replies_response
 
 
 def map_to_range(n):
@@ -264,7 +350,7 @@ class Trainer:
             conf = 1 - veracity_unknown
             #
 
-            return cred, conf
+            return cred, conf, veracity_false, veracity_true, veracity_unknown
 
     def evaluate(self, items, labels):
         pred_list = []
