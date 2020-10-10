@@ -338,9 +338,9 @@ class Trainer:
 
             sm = sm.flatten()
 
-            veracity_false = sm[0]
-            veracity_true = sm[1]
-            veracity_unknown = sm[2]
+            veracity_false = sm[0].item()
+            veracity_true = sm[1].item()
+            veracity_unknown = sm[2].item()
 
             # copied from baseline.py
             cred_sum = veracity_true + veracity_false
