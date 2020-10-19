@@ -1,4 +1,5 @@
 import logging
+import settings
 
 from typing import Union
 
@@ -14,6 +15,7 @@ from scipy.special import softmax
 # import pandas as pd
 import re
 import joblib
+import estimators.utils as utils
 
 # from estimators.baseline import load_replies
 from estimators import feature_extractor
@@ -137,18 +139,28 @@ class SimpleBERT:
         source_response['stance_support'] = probs[3]
 
         # veracity
-        trainer = Trainer(self.model, self.tokenizer)
-        text = tiny_preprocess(source["text"]) + " " + add
+        text = tiny_preprocess(source["text"])
+        if settings.get_preprocessing() and utils.is_verifiable(text):
+            text = text + " " + add
 
-        cred, conf, veracity_false, veracity_true, veracity_unknown = trainer.predict(text)
+            trainer = Trainer(self.model, self.tokenizer)
+            cred, conf, veracity_false, veracity_true, veracity_unknown = trainer.predict(text)
 
-        source_response['veracity_false'] = veracity_false
-        source_response['veracity_true'] = veracity_true
-        source_response['veracity_unknown'] = veracity_unknown
+            source_response['veracity_false'] = veracity_false
+            source_response['veracity_true'] = veracity_true
+            source_response['veracity_unknown'] = veracity_unknown
 
-        log.info('credibility {}, confidence {}'.format(cred, conf))
-        source_response['credibility'] = cred
-        source_response['confidence'] = conf
+            log.info('credibility {}, confidence {}'.format(cred, conf))
+            source_response['credibility'] = cred
+            source_response['confidence'] = conf
+        else:
+            source_response['veracity_false'] = 0
+            source_response['veracity_true'] = 0
+            source_response['veracity_unknown'] = 1
+
+            source_response['credibility'] = 0
+            source_response['confidence'] = 0
+            log.info('credibility {}, confidence {}'.format(0, 0))
 
         response = {'response': source_response, 'replies': replies_response}
 

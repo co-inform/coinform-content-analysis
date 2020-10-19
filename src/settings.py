@@ -37,6 +37,8 @@ def get_active_model():
 def get_num_replies():
     return config.getint('Other Settings','NUM_REPLIES')
 
+def get_preprocessing():
+    return config.get('Other Settings', 'preprocessing')
 
 def get_twitter_connector():
     return {
