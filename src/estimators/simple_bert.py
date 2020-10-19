@@ -138,7 +138,8 @@ class SimpleBERT:
 
         # veracity
         trainer = Trainer(self.model, self.tokenizer)
-        text = source["text"] + " " + add
+        text = tiny_preprocess(source["text"]) + " " + add
+
         cred, conf, veracity_false, veracity_true, veracity_unknown = trainer.predict(text)
 
         source_response['veracity_false'] = veracity_false
