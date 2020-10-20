@@ -30,6 +30,28 @@ tokens_replies = ["stcmm_0", "stdny_0", "stqry_0", "stspp_0",
                   "stcmm_3", "stdny_3", "stqry_3", "stspp_3"]
 
 
+def create_empty_unverified_response(conversation):
+    source = conversation['source']
+    replies = conversation['replies']
+
+    source_response = {'id': source['id'], 'text': source['text'], 'avg_stance_comment': 0.0, 'avg_stance_deny': 0.0,
+                       'avg_stance_query': 0.0, 'avg_stance_support': 0.0, 'stance_comment': 0.0, 'stance_deny': 0.0,
+                       'stance_query': 0.0, 'stance_support': 0.0, 'veracity_false': 0, 'veracity_true': 0,
+                       'veracity_unknown': 1, 'credibility': 0, 'confidence': 0}
+
+    replies_response = {}
+    for reply in replies:
+        replies_response[reply['id']] = reply
+        replies_response[reply['id']]['stance_comment'] = 0.0
+        replies_response[reply['id']]['stance_deny'] = 0.0
+        replies_response[reply['id']]['stance_query'] = 0.0
+        replies_response[reply['id']]['stance_support'] = 0.0
+
+    response = {'response': source_response, 'replies': replies_response}
+
+    return response
+
+
 class SimpleBERT:
     def __init__(self, model_path: str, stance_model_path: str):
         model_state_dict = torch.load(model_path)
@@ -53,6 +75,10 @@ class SimpleBERT:
     def estimate_veracity(self, conversation):
         source = conversation['source']
         replies = conversation['replies']
+
+        # only verify tweets in English
+        if 'en' != utils.detect_language(source['text']):
+            return create_empty_unverified_response(conversation)
 
         source_response = {'id': source['id'], 'text': source['text']}
 
@@ -114,7 +140,7 @@ class SimpleBERT:
                     s_s += 1
 
             add = "stcmm_" + str(map_to_range(s_c)) + " stdny_" + str(map_to_range(s_d)) + \
-                   " stqry_" + str(map_to_range(s_q)) + " stspp_" + str(map_to_range(s_s))
+                  " stqry_" + str(map_to_range(s_q)) + " stspp_" + str(map_to_range(s_s))
 
             source_response['avg_stance_comment'] = float(
                 sum(value[0] for value in replies_stance_dict.values()) / replies_stance_dict.values().__len__())
@@ -439,43 +465,44 @@ def tiny_preprocess(text):
     return text
 
 
-# def predict_all():
-#     m = SimpleBERT("model/new_fine_tune_replies/bert_veracity.pt", "data/models/baseline.pkl")
-#
-#     tweet_id_replies = load_replies()
-#
-#     with open("coinform4550_split/coinform4550_test.tsv") as f, open("predict_BEST_new_fine_tune_replies_2.tsv",
-#                                                                      "w") as fo:
-#         fo.write("id\tcred\tconf\n")
-#         n = 0
-#         for l in f:
-#             if n == 0:
-#                 n += 1
-#                 continue
-#             parts = l.split('\t')
-#             if len(parts[0]) == 0:
-#                 continue
-#
-#             text = tiny_preprocess(parts[0])
-#             id = parts[2]
-#
-#             replies = []
-#             if id in tweet_id_replies:
-#                 replies = tweet_id_replies[id]
-#
-#             rsp = m.estimate_veracity({'source': {
-#                 "id": id,
-#                 "text": text,
-#                 "replies": replies}})
-#             fo.write(parts[2] + '\t' + str(rsp['response']['credibility']) + '\t' + str(
-#                 rsp['response']['confidence']) + '\n')
+    # def predict_all():
+    #     m = SimpleBERT("model/new_fine_tune_replies/bert_veracity.pt", "data/models/baseline.pkl")
+    #
+    #     tweet_id_replies = load_replies()
+    #
+    #     with open("coinform4550_split/coinform4550_test.tsv") as f, open("predict_BEST_new_fine_tune_replies_2.tsv",
+    #                                                                      "w") as fo:
+    #         fo.write("id\tcred\tconf\n")
+    #         n = 0
+    #         for l in f:
+    #             if n == 0:
+    #                 n += 1
+    #                 continue
+    #             parts = l.split('\t')
+    #             if len(parts[0]) == 0:
+    #                 continue
+    #
+    #             text = tiny_preprocess(parts[0])
+    #             id = parts[2]
+    #
+    #             replies = []
+    #             if id in tweet_id_replies:
+    #                 replies = tweet_id_replies[id]
+    #
+    #             rsp = m.estimate_veracity({'source': {
+    #                 "id": id,
+    #                 "text": text,
+    #                 "replies": replies}})
+    #             fo.write(parts[2] + '\t' + str(rsp['response']['credibility']) + '\t' + str(
+    #                 rsp['response']['confidence']) + '\n')
+
 
 # if __name__ == '__main__':
-#     # train()
-#     # predict_all()
+#     train()
+#     predict_all()
 #     s = SimpleBERT("model/new_fine_tune_replies/bert_veracity.pt", "data/models/baseline.pkl")
-#     c = {"source": {"id": 123, "text": "I hate apples"} ,
-#     "replies": [{"id": 123, "text": "Me too"}]
-#     }
+#     c = {"source": {"id": 123, "text": "I hate apples"},
+#          "replies": [{"id": 123, "text": "Me too"}]
+#          }
 #     rrr = s.estimate_veracity(c)
 #     print()

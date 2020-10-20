@@ -1,4 +1,6 @@
 import torch
+from langdetect import detect
+
 
 CUDA = 'cuda'
 CPU = 'cpu'
@@ -17,8 +19,13 @@ def is_verifiable(tweet_text):
     if len(tweet_text.split(" ")) < 3:
         return False
 
-    # if "URL" in tweet_text:
+    # if "url" in tweet_text:
     #     return False
 
     return True
+
+
+def detect_language(tweet_text):
+    return detect(tweet_text)
+
 
